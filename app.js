@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'focus_manager_v1';
 const DEFAULT_DATA = {
-  version: '1.2.0',
+  version: '1.2.2',
   settings: {
     dailyTargetHours: 6,
     sound: true,
@@ -42,6 +42,7 @@ let currentView = 'dashboard';
 let selectedPresetMinutes = 25;
 let selectedMood = 'focused';
 let tickTimer = null;
+let clockTimer = null;
 let deferredPrompt = null;
 let editingSessionId = null;
 
@@ -154,6 +155,30 @@ function dateLabel(date = new Date()) {
 
 function formatClock(date) {
   return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+}
+
+function formatFloatingClock(date = new Date()) {
+  const time = new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+  const datePart = new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric', weekday: 'short' })
+    .format(date)
+    .replace(/\s+/g, ' ')
+    .replace(/\.$/, '')
+    .trim();
+  return `${time} · ${datePart}`;
+}
+
+function updateFloatingClock() {
+  const clock = $('#floatingClock');
+  if (!clock) return;
+  const now = new Date();
+  clock.textContent = formatFloatingClock(now);
+  clock.dateTime = now.toISOString();
+}
+
+function startFloatingClock() {
+  if (clockTimer) clearInterval(clockTimer);
+  updateFloatingClock();
+  clockTimer = setInterval(updateFloatingClock, 1000);
 }
 
 function formatDuration(ms, compact = true) {
@@ -1214,6 +1239,7 @@ function init() {
   bindEvents();
   registerServiceWorker();
   startTicker();
+  startFloatingClock();
   renderAll();
 }
 

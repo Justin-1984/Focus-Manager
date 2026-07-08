@@ -2,8 +2,8 @@
 
 ## Current baseline
 
-- Current version: v1.2.1
-- Baseline type: Modal Hotfix on v1.2.0 GitHub Backup Foundation
+- Current version: v1.2.2
+- Baseline type: Sticky Clock UX update on v1.2.1 Modal Hotfix
 - Storage: localStorage first
 - Storage key: `focus_manager_v1` unchanged
 - Backup: JSON export/import + GitHub manual backup/restore + optional session-end auto backup
@@ -27,6 +27,14 @@
 - Manifest JSON structure validated.
 - DOM id references used by app.js were cross-checked against index.html.
 - Existing storage key and base data shape were preserved.
+
+## v1.2.2 additions
+
+- Added fixed current-time badge at the top of the screen
+- The time remains visible while scrolling long pages
+- Added iPhone/iPad safe-area aware positioning
+- Added non-blocking `pointer-events: none` behavior for the clock badge
+- Updated service worker cache to `focusmanager-v1-2-2`
 
 ## v1.2.1 hotfix additions
 
@@ -81,7 +89,7 @@
 
 ## Next recommended update
 
-v1.2.2 should focus on backup UX stabilization:
+v1.2.3 should focus on backup UX stabilization:
 
 - 백업 성공/실패 메시지 더 명확하게 표시
 - 복원 전 백업 파일 요약 미리보기

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.2
+
+- 추가: 화면 상단에 항상 표시되는 현재시간 배지 추가
+- 개선: 스크롤을 내려도 현재 시간을 확인할 수 있도록 fixed 위치 적용
+- 개선: iPhone/iPad safe-area를 고려한 상단 여백과 위치 보정
+- 개선: 시계 배지는 클릭을 방해하지 않도록 `pointer-events: none` 적용
+- 유지: v1.2.1 모달 핫픽스, GitHub 백업/복원 기능, 저장 키 `focus_manager_v1` 유지
+- 갱신: service worker cache version `focusmanager-v1-2-2`로 변경
+
 ## v1.2.1
 
 - 긴급 수정: iPhone/Safari에서 `hidden` 속성이 `.modal-overlay`의 `display:flex`에 의해 무시되어 세션 수정 모달이 앱 시작 시 항상 보이던 문제 수정

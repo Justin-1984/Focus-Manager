@@ -1,4 +1,4 @@
-# FocusManager PWA v1.2.1 Modal Hotfix
+# FocusManager PWA v1.2.2 Sticky Clock
 
 Session 스타일의 개인 집중 관리 PWA입니다.  
 핵심 흐름은 **의도 설정 → 집중 세션 실행 → 회고 기록 → 타임라인 정리 → 리포트 분석 → 백업**입니다.
@@ -7,9 +7,9 @@ Session 스타일의 개인 집중 관리 PWA입니다.
 
 ## 현재 버전 핵심
 
-v1.2.1은 v1.2.0 GitHub Backup Foundation을 기준으로 iPhone 모바일에서 세션 수정 모달이 초기 화면을 가리던 문제를 수정한 긴급 안정화 버전입니다.
+v1.2.2는 v1.2.1 Modal Hotfix를 기준으로 화면 상단에 항상 보이는 작은 현재시간 배지를 추가한 사용성 개선 버전입니다.
 
-GitHub 백업 기반은 유지하면서, 모바일에서 숨김 처리와 모달 스크롤/닫기 동작을 안정화했습니다.
+GitHub 백업 기반과 모바일 모달 안정화는 유지하면서, 긴 페이지를 스크롤해도 현재 시간을 바로 확인할 수 있도록 고정 시계 UI를 추가했습니다.
 
 - 기존 localStorage 저장 유지
 - 기존 JSON 백업/복원 유지
@@ -21,6 +21,7 @@ GitHub 백업 기반은 유지하면서, 모바일에서 숨김 처리와 모달
 - 저장 키 `focus_manager_v1` 유지
 - 수정 모달 hidden 표시 오류 수정
 - 모바일 수정 모달 스크롤/닫기 UX 안정화
+- 화면 상단 고정 현재시간 표시
 
 ## 포함 기능
 
@@ -86,6 +87,13 @@ GitHub 백업 기반은 유지하면서, 모바일에서 숨김 처리와 모달
 - GitHub 토큰 삭제
 - 전체 초기화
 
+### 고정 시계
+
+- 화면 상단 현재시간 표시
+- 스크롤 중에도 항상 표시
+- iPhone/iPad safe-area 고려
+- 클릭을 막지 않도록 pointer-events 비활성화
+
 ### PWA
 
 - manifest 포함
@@ -117,7 +125,7 @@ GitHub 백업 파일은 다음 형식의 envelope 구조로 저장됩니다.
 {
   "app": "FocusManager",
   "backupVersion": "1.0",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "storageKey": "focus_manager_v1",
   "backupAt": "ISO_DATE",
   "data": {
@@ -150,7 +158,7 @@ GitHub 백업 파일은 다음 형식의 envelope 구조로 저장됩니다.
 
 ## 권장 다음 단계
 
-1. v1.2.1: 백업 UX 안정화
+1. v1.2.3: 백업 UX 안정화
    - 백업 성공/실패 표시 개선
    - 마지막 백업 카드 추가
    - 복원 전 백업 미리보기
