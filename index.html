@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#191716" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FocusManager" />
+  <title>FocusManager PWA</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside class="sidebar" aria-label="앱 메뉴">
+      <div class="brand">
+        <div class="brand-mark">F</div>
+        <div>
+          <strong>FocusManager</strong>
+          <span>v1.0 Initial</span>
+        </div>
+      </div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="dashboard">대시보드</button>
+        <button class="nav-item" data-view="session">세션</button>
+        <button class="nav-item" data-view="timeline">타임라인</button>
+        <button class="nav-item" data-view="reports">리포트</button>
+        <button class="nav-item" data-view="settings">설정</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span id="storageStatus">로컬 저장 준비됨</span>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="todayLabel">Today</p>
+          <h1 id="pageTitle">대시보드</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost-button" id="installBtn" hidden>홈 화면 설치</button>
+          <button class="ghost-button" id="quickSessionBtn">빠른 시작</button>
+        </div>
+      </header>
+
+      <section id="dashboardView" class="view active-view">
+        <div class="hero-grid">
+          <div class="hero-card">
+            <p class="eyebrow">오늘의 질문</p>
+            <h2>오늘 시간을 제대로 쓰고 있나요?</h2>
+            <p class="muted">의도 → 실행 → 기록 → 분석 흐름으로 공부와 작업 시간을 관리합니다.</p>
+            <div class="progress-wrap">
+              <div class="progress-line"><span id="todayProgressBar"></span></div>
+              <div class="progress-meta"><span id="todayProgressText">0%</span><span id="todayTargetText">목표 0h</span></div>
+            </div>
+          </div>
+          <div class="session-now-card" id="sessionNowCard">
+            <p class="eyebrow">현재 세션</p>
+            <h2 id="nowSessionTitle">진행 중인 세션 없음</h2>
+            <p id="nowSessionMeta" class="muted">세션 화면에서 오늘의 의도를 입력하고 시작하세요.</p>
+            <div class="big-timer" id="dashboardTimer">00:00:00</div>
+            <div class="button-row">
+              <button class="primary-button" id="dashboardStartBtn">세션 시작</button>
+              <button class="ghost-button" id="dashboardEndBtn" hidden>종료</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card"><span>오늘 집중</span><strong id="metricTodayFocus">0m</strong><small>휴식 제외</small></article>
+          <article class="metric-card"><span>세션 수</span><strong id="metricSessionCount">0</strong><small>오늘 완료</small></article>
+          <article class="metric-card"><span>최장 세션</span><strong id="metricLongest">0m</strong><small>오늘 기준</small></article>
+          <article class="metric-card"><span>가장 많은 카테고리</span><strong id="metricTopCategory">-</strong><small>오늘 기준</small></article>
+        </div>
+
+        <div class="two-column">
+          <section class="panel-card">
+            <div class="panel-head"><h3>오늘 타임라인</h3><button class="link-button" data-jump="timeline">전체 보기</button></div>
+            <div id="miniTimeline" class="mini-timeline"></div>
+          </section>
+          <section class="panel-card">
+            <div class="panel-head"><h3>최근 기록</h3><button class="link-button" data-jump="reports">분석 보기</button></div>
+            <div id="recentSessions" class="session-list empty-list">아직 기록이 없습니다.</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="sessionView" class="view">
+        <div class="session-layout">
+          <section class="panel-card session-control-card">
+            <p class="eyebrow">State your intention</p>
+            <h2>이번 세션의 목적을 정하세요</h2>
+            <label class="field-label" for="intentionInput">의도 / 할 일</label>
+            <input id="intentionInput" class="text-input" placeholder="예: 보험계약법 기출 30문제 인출" autocomplete="off" />
+            <div id="intentionSuggestions" class="suggestion-list"></div>
+
+            <label class="field-label" for="categorySelect">카테고리</label>
+            <select id="categorySelect" class="text-input"></select>
+
+            <div class="preset-row" aria-label="세션 프리셋">
+              <button class="chip active" data-minutes="25">25분</button>
+              <button class="chip" data-minutes="50">50분</button>
+              <button class="chip" data-minutes="90">90분</button>
+              <button class="chip" data-minutes="0">자유</button>
+            </div>
+
+            <div class="dial">
+              <svg viewBox="0 0 220 220" aria-hidden="true">
+                <circle cx="110" cy="110" r="88" class="dial-track"></circle>
+                <circle cx="110" cy="110" r="88" class="dial-progress" id="dialProgress"></circle>
+              </svg>
+              <div class="dial-center">
+                <span id="sessionTimer">00:00:00</span>
+                <small id="sessionStateText">대기 중</small>
+              </div>
+            </div>
+
+            <div class="button-row center-buttons">
+              <button class="primary-button large-button" id="startPauseBtn">START SESSION</button>
+              <button class="ghost-button large-button" id="finishSessionBtn" hidden>SUBMIT SESSION</button>
+            </div>
+          </section>
+
+          <section class="panel-card reflection-card">
+            <p class="eyebrow">Document your Session</p>
+            <h2>세션 종료 기록</h2>
+            <div class="mood-row" id="moodRow">
+              <button class="mood active" data-mood="focused">😌<span>집중</span></button>
+              <button class="mood" data-mood="neutral">🙂<span>보통</span></button>
+              <button class="mood" data-mood="distracted">😵‍💫<span>산만</span></button>
+            </div>
+            <label class="field-label" for="reflectionNote">메모</label>
+            <textarea id="reflectionNote" class="text-area" placeholder="무엇을 했고, 무엇을 개선하면 좋을지 기록하세요."></textarea>
+            <div class="summary-box" id="activeSummary">세션을 시작하면 요약이 표시됩니다.</div>
+          </section>
+        </div>
+      </section>
+
+      <section id="timelineView" class="view">
+        <div class="panel-card">
+          <div class="panel-head wrap-head">
+            <div><p class="eyebrow">Daily Timeline</p><h2>오늘의 시간 사용</h2></div>
+            <input type="date" id="timelineDate" class="date-input" />
+          </div>
+          <div class="timeline-wrapper" id="timelineWrapper"></div>
+        </div>
+      </section>
+
+      <section id="reportsView" class="view">
+        <div class="report-grid">
+          <section class="panel-card wide-report">
+            <div class="panel-head wrap-head">
+              <div><p class="eyebrow">Analyze your data</p><h2>집중 리포트</h2></div>
+              <select id="reportRange" class="text-input small-select">
+                <option value="7">최근 7일</option>
+                <option value="14">최근 14일</option>
+                <option value="30">최근 30일</option>
+              </select>
+            </div>
+            <div class="bar-chart" id="dailyChart"></div>
+          </section>
+          <section class="panel-card">
+            <h3>카테고리 분포</h3>
+            <div id="categoryReport" class="category-report"></div>
+          </section>
+          <section class="panel-card">
+            <h3>패턴 요약</h3>
+            <div id="patternReport" class="pattern-report"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="settingsView" class="view">
+        <div class="settings-grid">
+          <section class="panel-card">
+            <h2>기본 설정</h2>
+            <label class="field-label" for="targetHours">하루 목표 집중 시간</label>
+            <input id="targetHours" class="text-input" type="number" min="0.5" max="16" step="0.5" />
+            <label class="toggle-line"><input id="soundToggle" type="checkbox" /> 세션 종료 알림음 사용</label>
+            <label class="toggle-line"><input id="autoReflectionToggle" type="checkbox" /> 종료 시 회고 입력 유도</label>
+            <button class="primary-button" id="saveSettingsBtn">설정 저장</button>
+          </section>
+
+          <section class="panel-card">
+            <h2>카테고리 관리</h2>
+            <div id="categoryEditor" class="category-editor"></div>
+            <div class="inline-form">
+              <input id="newCategoryName" class="text-input" placeholder="새 카테고리명" />
+              <input id="newCategoryColor" class="color-input" type="color" value="#ef4e4e" />
+              <button class="ghost-button" id="addCategoryBtn">추가</button>
+            </div>
+          </section>
+
+          <section class="panel-card">
+            <h2>백업 / 복원</h2>
+            <p class="muted">현재 버전은 로컬 저장 기반입니다. JSON으로 백업 후 다른 기기에서 복원할 수 있습니다.</p>
+            <div class="button-row">
+              <button class="ghost-button" id="exportBtn">백업 내보내기</button>
+              <label class="ghost-button file-button" for="importFile">복원 가져오기</label>
+              <input id="importFile" type="file" accept="application/json" hidden />
+            </div>
+            <button class="danger-button" id="resetBtn">전체 데이터 초기화</button>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <nav class="mobile-nav" aria-label="모바일 메뉴">
+      <button class="mobile-nav-item active" data-view="dashboard">홈</button>
+      <button class="mobile-nav-item" data-view="session">세션</button>
+      <button class="mobile-nav-item" data-view="timeline">기록</button>
+      <button class="mobile-nav-item" data-view="reports">분석</button>
+      <button class="mobile-nav-item" data-view="settings">설정</button>
+    </nav>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>

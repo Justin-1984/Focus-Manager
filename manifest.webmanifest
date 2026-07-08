@@ -1,0 +1,16 @@
+{
+  "name": "FocusManager PWA",
+  "short_name": "FocusManager",
+  "description": "의도, 집중 세션, 타임라인, 리포트를 관리하는 개인 집중 매니저 PWA",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#151312",
+  "theme_color": "#191716",
+  "orientation": "any",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
