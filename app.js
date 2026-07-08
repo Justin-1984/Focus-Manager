@@ -1,17 +1,34 @@
 const STORAGE_KEY = 'focus_manager_v1';
 const DEFAULT_DATA = {
-  version: '1.0.0',
+  version: '1.2.0',
   settings: {
     dailyTargetHours: 6,
     sound: true,
     autoReflection: true,
+    examDate: null,
+    githubBackup: {
+      enabled: false,
+      owner: '',
+      repo: '',
+      branch: 'main',
+      path: 'data/focusmanager_backup.json',
+      token: '',
+      autoOnSessionEnd: false,
+      lastBackupAt: null,
+      lastRestoreAt: null,
+      lastStatus: 'GitHub 백업 미설정',
+    },
   },
   categories: [
-    { id: 'study', name: '공부', color: '#ef4e4e' },
-    { id: 'work', name: '작업', color: '#31d464' },
-    { id: 'reading', name: '독서', color: '#f4a340' },
-    { id: 'research', name: '리서치', color: '#9acd32' },
-    { id: 'break', name: '휴식', color: '#7d7d7d' },
+    { id: 'law_insurance', name: '보험업법', color: '#c9a227', phase: '1차' },
+    { id: 'law_contract', name: '보험계약법(상법)', color: '#c9a227', phase: '1차' },
+    { id: 'theory', name: '손해사정이론', color: '#c9a227', phase: '1차' },
+    { id: 'english', name: '영어', color: '#c9a227', phase: '1차' },
+    { id: 'medical', name: '의학이론', color: '#2f8f6f', phase: '2차' },
+    { id: 'liability', name: '책임보험·산재보험', color: '#2f8f6f', phase: '2차' },
+    { id: 'third_party', name: '제3보험', color: '#2f8f6f', phase: '2차' },
+    { id: 'auto', name: '자동차보험', color: '#2f8f6f', phase: '2차' },
+    { id: 'break', name: '휴식', color: '#7d7772', phase: '기타' },
   ],
   sessions: [],
   activeSession: null,
@@ -26,6 +43,7 @@ let selectedPresetMinutes = 25;
 let selectedMood = 'focused';
 let tickTimer = null;
 let deferredPrompt = null;
+let editingSessionId = null;
 
 const pageTitles = {
   dashboard: '대시보드',
@@ -35,19 +53,57 @@ const pageTitles = {
   settings: '설정',
 };
 
+const STUDY_TYPE_LABELS = {
+  theory: '이론',
+  past: '기출',
+  memorize: '암기',
+  wrong: '오답',
+  answer: '답안작성',
+  review: '복습',
+  etc: '기타',
+};
+
+const ROUND_LABELS = {
+  none: '미지정',
+  '1': '1회독',
+  '2': '2회독',
+  '3': '3회독',
+  '4': '4회독',
+  '5plus': '5회독+',
+  final: '최종정리',
+};
+
+function mergeSettings(settings = {}) {
+  const githubBackup = {
+    ...DEFAULT_DATA.settings.githubBackup,
+    ...(settings.githubBackup || {}),
+  };
+  return {
+    ...DEFAULT_DATA.settings,
+    ...settings,
+    githubBackup,
+  };
+}
+
+function normalizeImportedData(imported) {
+  const source = imported?.app === 'FocusManager' && imported.data ? imported.data : imported;
+  if (!source || !Array.isArray(source.sessions) || !Array.isArray(source.categories)) throw new Error('invalid data');
+  return {
+    ...structuredClone(DEFAULT_DATA),
+    ...source,
+    version: DEFAULT_DATA.version,
+    settings: mergeSettings(source.settings || {}),
+    categories: source.categories.length ? source.categories : DEFAULT_DATA.categories,
+    sessions: Array.isArray(source.sessions) ? source.sessions : [],
+    activeSession: source.activeSession || null,
+  };
+}
+
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return structuredClone(DEFAULT_DATA);
-    const parsed = JSON.parse(raw);
-    return {
-      ...structuredClone(DEFAULT_DATA),
-      ...parsed,
-      settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) },
-      categories: parsed.categories?.length ? parsed.categories : DEFAULT_DATA.categories,
-      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
-      activeSession: parsed.activeSession || null,
-    };
+    return normalizeImportedData(JSON.parse(raw));
   } catch (error) {
     console.warn('Failed to load data', error);
     return structuredClone(DEFAULT_DATA);
@@ -59,6 +115,30 @@ function saveData(message = '저장됨') {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   const status = $('#storageStatus');
   if (status) status.textContent = `${message} · ${formatClock(new Date())}`;
+}
+
+function backupSafeData() {
+  const snapshot = structuredClone(data);
+  snapshot.version = DEFAULT_DATA.version;
+  if (snapshot.settings?.githubBackup) {
+    snapshot.settings.githubBackup = {
+      ...snapshot.settings.githubBackup,
+      token: '',
+    };
+  }
+  return snapshot;
+}
+
+function makeBackupEnvelope() {
+  return {
+    app: 'FocusManager',
+    backupVersion: '1.0',
+    version: DEFAULT_DATA.version,
+    storageKey: STORAGE_KEY,
+    backupAt: new Date().toISOString(),
+    source: location.href,
+    data: backupSafeData(),
+  };
 }
 
 function todayKey(date = new Date()) {
@@ -121,10 +201,23 @@ function startTicker() {
   if (tickTimer) clearInterval(tickTimer);
   tickTimer = setInterval(() => {
     if (data.activeSession) {
+      checkTargetReached();
       renderActiveSession();
       renderDashboard(false);
     }
   }, 1000);
+}
+
+function checkTargetReached() {
+  const session = data.activeSession;
+  if (!session || !session.targetMinutes || session.isPaused || session.targetNotified) return;
+  const elapsed = sessionDuration(session);
+  if (elapsed >= session.targetMinutes * 60000) {
+    session.targetNotified = true;
+    saveData('목표 시간 도달');
+    if (data.settings.sound) playDing();
+    toast(`목표 시간(${session.targetMinutes}분)에 도달했습니다. 계속하거나 세션을 종료하세요.`);
+  }
 }
 
 function switchView(view) {
@@ -159,8 +252,17 @@ function renderAll(showToast = false) {
 function renderCategorySelects() {
   const select = $('#categorySelect');
   if (!select) return;
-  const current = select.value || data.activeSession?.categoryId || 'study';
-  select.innerHTML = data.categories.map((cat) => `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`).join('');
+  const current = select.value || data.activeSession?.categoryId || data.categories[0]?.id;
+  const groups = new Map();
+  data.categories.forEach((cat) => {
+    const key = cat.phase || '기타';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(cat);
+  });
+  select.innerHTML = Array.from(groups.entries()).map(([phase, cats]) => `
+    <optgroup label="${escapeAttr(phase)}">
+      ${cats.map((cat) => `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`).join('')}
+    </optgroup>`).join('');
   select.value = data.categories.some((cat) => cat.id === current) ? current : data.categories[0]?.id;
 }
 
@@ -179,9 +281,21 @@ function renderDashboard() {
   $('#todayProgressText').textContent = `${progress}% 달성`;
   $('#todayTargetText').textContent = `목표 ${data.settings.dailyTargetHours}h`;
 
+  const dday = dDayInfo();
+  const sealEl = $('#examSeal');
+  if (sealEl) {
+    if (dday) {
+      sealEl.hidden = false;
+      $('#examSealLabel').textContent = dday.label;
+      $('#examSealDate').textContent = new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(new Date(`${data.settings.examDate}T00:00:00`));
+    } else {
+      sealEl.hidden = true;
+    }
+  }
+
   const active = data.activeSession;
   $('#nowSessionTitle').textContent = active ? active.title || '제목 없는 세션' : '진행 중인 세션 없음';
-  $('#nowSessionMeta').textContent = active ? `${getCategory(active.categoryId).name} · ${active.isPaused ? '일시정지' : '진행 중'}` : '세션 화면에서 오늘의 의도를 입력하고 시작하세요.';
+  $('#nowSessionMeta').textContent = active ? `${getCategory(active.categoryId).name} · ${sessionMetaText(active)} · ${active.isPaused ? '일시정지' : active.targetNotified ? '목표 시간 초과' : '진행 중'}` : '세션 화면에서 오늘의 의도를 입력하고 시작하세요.';
   $('#dashboardTimer').textContent = active ? formatDuration(sessionDuration(active), false) : '00:00:00';
   $('#dashboardStartBtn').textContent = active ? '세션으로 이동' : '세션 시작';
   $('#dashboardEndBtn').hidden = !active;
@@ -214,7 +328,7 @@ function renderMiniTimeline(sessions) {
     const end = session.endAt ? formatClock(new Date(session.endAt)) : '진행 중';
     return `<div class="mini-row" style="border-left: 4px solid ${cat.color}">
       <div class="time">${formatClock(new Date(session.startAt))}<br>${end}</div>
-      <div class="name">${escapeHtml(session.title || '제목 없는 세션')}</div>
+      <div class="name">${escapeHtml(session.title || '제목 없는 세션')}<div class="meta-badge-row">${sessionMetaBadges(session)}</div></div>
       <div class="duration">${formatDuration(sessionDuration(session))}</div>
     </div>`;
   }).join('');
@@ -232,8 +346,11 @@ function renderRecentSessions() {
   el.innerHTML = items.map((session) => {
     const cat = getCategory(session.categoryId);
     return `<article class="session-item" style="border-left: 4px solid ${cat.color}">
-      <strong>${escapeHtml(session.title || '제목 없는 세션')}</strong>
-      <span>${todayKey(new Date(session.startAt))} · ${cat.name} · ${formatDuration(sessionDuration(session))} · ${moodLabel(session.mood)}</span>
+      <div class="session-item-head">
+        <strong>${escapeHtml(session.title || '제목 없는 세션')}</strong>
+        <button class="edit-button" data-edit-session="${session.id}" aria-label="세션 수정">수정</button>
+      </div>
+      <span>${todayKey(new Date(session.startAt))} · ${escapeHtml(cat.name)} · ${sessionMetaHtml(session)} · ${formatDuration(sessionDuration(session))} · ${moodLabel(session.mood)}</span>
     </article>`;
   }).join('');
 }
@@ -242,17 +359,25 @@ function renderActiveSession() {
   const session = data.activeSession;
   const timerText = session ? formatDuration(sessionDuration(session), false) : '00:00:00';
   $('#sessionTimer').textContent = timerText;
-  $('#sessionStateText').textContent = session ? (session.isPaused ? '일시정지 중' : '진행 중') : '대기 중';
+  const overtime = session && session.targetNotified;
+  $('#sessionStateText').textContent = session ? (session.isPaused ? '일시정지 중' : overtime ? '목표 시간 초과 · 진행 중' : '진행 중') : '대기 중';
+  $('#sessionStateText').classList.toggle('overtime', !!overtime && !session?.isPaused);
   $('#startPauseBtn').textContent = session ? (session.isPaused ? 'RESUME SESSION' : 'PAUSE SESSION') : 'START SESSION';
   $('#finishSessionBtn').hidden = !session;
   $('#intentionInput').disabled = !!session;
   $('#categorySelect').disabled = !!session;
+  $('#sessionTypeSelect').disabled = !!session;
+  $('#roundSelect').disabled = !!session;
+  $('#partInput').disabled = !!session;
   $('#reflectionNote').disabled = !session;
   $('#activeSummary').innerHTML = session ? activeSummaryHtml(session) : '세션을 시작하면 요약이 표시됩니다.';
 
   if (session) {
     $('#intentionInput').value = session.title || '';
     $('#categorySelect').value = session.categoryId;
+    $('#sessionTypeSelect').value = normalizeStudyType(session.sessionType);
+    $('#roundSelect').value = normalizeRound(session.round);
+    $('#partInput').value = session.part || '';
   }
   updateDialProgress(session);
 }
@@ -262,6 +387,7 @@ function activeSummaryHtml(session) {
   const preset = session.targetMinutes ? `목표 ${session.targetMinutes}분` : '자유 세션';
   return `<strong>${escapeHtml(session.title || '제목 없는 세션')}</strong><br>
     ${cat.name} · ${preset}<br>
+    ${sessionMetaHtml(session)}<br>
     시작 ${formatClock(new Date(session.startAt))} · 현재 ${formatDuration(sessionDuration(session))}<br>
     휴식 ${formatDuration(totalPausedMs(session))}`;
 }
@@ -271,10 +397,12 @@ function updateDialProgress(session) {
   const circumference = 552.92;
   if (!session || !session.targetMinutes) {
     circle.style.strokeDashoffset = session ? circumference * 0.22 : circumference;
+    circle.style.stroke = 'var(--accent)';
     return;
   }
   const ratio = Math.min(1, sessionDuration(session) / (session.targetMinutes * 60000));
   circle.style.strokeDashoffset = String(circumference * (1 - ratio));
+  circle.style.stroke = session.targetNotified ? 'var(--warning)' : 'var(--accent)';
 }
 
 function renderTimeline() {
@@ -307,9 +435,11 @@ function timelineBlock(session, startHour, rowHeight, totalHours) {
   const maxHeight = totalHours * rowHeight;
   const safeTop = Math.min(maxHeight - 34, top);
   const safeHeight = Math.min(height, maxHeight - safeTop);
-  return `<div class="timeline-block" style="top:${safeTop}px;height:${safeHeight}px;background:${cat.color}">
+  const editable = session.status === 'completed';
+  const editAttr = editable ? ` data-edit-session="${session.id}" role="button" tabindex="0"` : '';
+  return `<div class="timeline-block${editable ? ' is-editable' : ''}" style="top:${safeTop}px;height:${safeHeight}px;background:${cat.color}"${editAttr}>
     <strong>${escapeHtml(session.title || '제목 없는 세션')}</strong>
-    <span>${formatClock(start)} - ${session.endAt ? formatClock(end) : '진행 중'} · ${formatDuration(sessionDuration(session))}</span>
+    <span>${formatClock(start)} - ${session.endAt ? formatClock(end) : '진행 중'} · ${formatDuration(sessionDuration(session))} · ${sessionMetaHtml(session)}</span>
   </div>`;
 }
 
@@ -327,20 +457,69 @@ function renderReports() {
     const key = todayKey(new Date(session.startAt));
     dailyMs.set(key, (dailyMs.get(key) || 0) + sessionDuration(session));
   });
-  const maxMs = Math.max(1, ...Array.from(dailyMs.values()));
-  $('#dailyChart').innerHTML = dayKeys.map((key) => {
-    const ms = dailyMs.get(key) || 0;
-    const date = new Date(`${key}T00:00:00`);
-    const label = `${date.getMonth() + 1}/${date.getDate()}`;
-    return `<div class="day-bar">
-      <div class="bar" style="height:${Math.max(4, (ms / maxMs) * 190)}px"></div>
-      <span>${label}</span>
-      <small>${formatDuration(ms)}</small>
-    </div>`;
-  }).join('');
-
+  renderDailyChart(dayKeys, dailyMs);
   renderCategoryReport(sessions);
   renderPatternReport(sessions);
+  renderStudyTypeReport(sessions);
+  renderRoundReport(sessions);
+}
+
+function renderDailyChart(dayKeys, dailyMs) {
+  const el = $('#dailyChart');
+  if (!el) return;
+  const values = dayKeys.map((key) => (dailyMs.get(key) || 0) / 3600000);
+  const maxVal = Math.max(1, ...values);
+  const width = 100;
+  const height = 42;
+  const padY = 4;
+  const step = dayKeys.length > 1 ? width / (dayKeys.length - 1) : 0;
+  const points = values.map((v, i) => {
+    const x = dayKeys.length > 1 ? i * step : width / 2;
+    const y = height - padY - (v / maxVal) * (height - padY * 2);
+    return [x, y];
+  });
+
+  const linePath = smoothPath(points);
+  const areaPath = `${linePath} L ${points[points.length - 1][0]},${height} L ${points[0][0]},${height} Z`;
+
+  const dots = points.map(([x, y], i) => {
+    const hours = values[i];
+    const date = new Date(`${dayKeys[i]}T00:00:00`);
+    const label = `${date.getMonth() + 1}/${date.getDate()}`;
+    return `<circle cx="${x}" cy="${y}" r="1.6" class="chart-dot"><title>${label} · ${formatDuration(hours * 3600000)}</title></circle>`;
+  }).join('');
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="chart-svg">
+      <defs>
+        <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--accent-2)" stop-opacity="0.38" />
+          <stop offset="100%" stop-color="var(--accent-2)" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path d="${areaPath}" fill="url(#chartFill)" stroke="none" />
+      <path d="${linePath}" fill="none" stroke="var(--accent-2)" stroke-width="0.9" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" />
+      ${dots}
+    </svg>
+    <div class="chart-axis">${dayKeys.map((key) => {
+      const date = new Date(`${key}T00:00:00`);
+      return `<span>${date.getMonth() + 1}/${date.getDate()}</span>`;
+    }).join('')}</div>`;
+}
+
+function smoothPath(points) {
+  if (points.length < 2) {
+    const [x, y] = points[0] || [0, 0];
+    return `M ${x},${y}`;
+  }
+  let d = `M ${points[0][0]},${points[0][1]}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[i + 1];
+    const cx = (x0 + x1) / 2;
+    d += ` C ${cx},${y0} ${cx},${y1} ${x1},${y1}`;
+  }
+  return d;
 }
 
 function renderCategoryReport(sessions) {
@@ -361,6 +540,46 @@ function renderCategoryReport(sessions) {
       <strong>${formatDuration(ms)}</strong>
     </div>`;
   }).join('');
+}
+
+
+function renderStudyTypeReport(sessions) {
+  const el = $('#studyTypeReport');
+  if (!el) return;
+  if (!sessions.length) {
+    el.innerHTML = '<p class="muted">세션 타입이 기록되면 이론/기출/암기 비중이 표시됩니다.</p>';
+    return;
+  }
+  const sums = new Map();
+  sessions.forEach((session) => {
+    const key = normalizeStudyType(session.sessionType);
+    sums.set(key, (sums.get(key) || 0) + sessionDuration(session));
+  });
+  const total = Array.from(sums.values()).reduce((a, b) => a + b, 0) || 1;
+  el.innerHTML = Array.from(sums.entries()).sort((a, b) => b[1] - a[1]).map(([type, ms]) => {
+    const pct = Math.round((ms / total) * 100);
+    return `<div class="category-line">
+      <span>${studyTypeLabel(type)}</span>
+      <div class="track"><div class="fill" style="width:${pct}%;background:var(--accent-2)"></div></div>
+      <strong>${formatDuration(ms)}</strong>
+    </div>`;
+  }).join('');
+}
+
+function renderRoundReport(sessions) {
+  const el = $('#roundReport');
+  if (!el) return;
+  if (!sessions.length) {
+    el.innerHTML = '<p class="muted">회독 단계가 쌓이면 회독별 누적 시간이 표시됩니다.</p>';
+    return;
+  }
+  const sums = new Map();
+  sessions.forEach((session) => {
+    const key = normalizeRound(session.round);
+    sums.set(key, (sums.get(key) || 0) + sessionDuration(session));
+  });
+  el.innerHTML = Array.from(sums.entries()).sort((a, b) => b[1] - a[1]).map(([round, ms]) => `
+    <div class="pattern-pill"><strong>${roundLabel(round)}</strong><br>${formatDuration(ms)} 누적</div>`).join('');
 }
 
 function renderPatternReport(sessions) {
@@ -388,11 +607,28 @@ function renderSettings() {
   $('#targetHours').value = data.settings.dailyTargetHours;
   $('#soundToggle').checked = !!data.settings.sound;
   $('#autoReflectionToggle').checked = !!data.settings.autoReflection;
+  const examInput = $('#examDateInput');
+  if (examInput) examInput.value = data.settings.examDate || '';
+
+  const github = data.settings.githubBackup || DEFAULT_DATA.settings.githubBackup;
+  const setValue = (selector, value) => { const el = $(selector); if (el) el.value = value || ''; };
+  const setChecked = (selector, value) => { const el = $(selector); if (el) el.checked = !!value; };
+  setChecked('#githubBackupEnabled', github.enabled);
+  setChecked('#githubAutoOnSessionEnd', github.autoOnSessionEnd);
+  setValue('#githubOwner', github.owner);
+  setValue('#githubRepo', github.repo);
+  setValue('#githubBranch', github.branch || 'main');
+  setValue('#githubPath', github.path || 'data/focusmanager_backup.json');
+  setValue('#githubToken', github.token);
+  const githubStatus = $('#githubBackupStatus');
+  if (githubStatus) githubStatus.innerHTML = githubStatusText(github);
+
+  const firstId = data.categories[0]?.id;
   $('#categoryEditor').innerHTML = data.categories.map((cat) => `
     <div class="category-edit-row">
       <span class="color-dot" style="background:${cat.color}"></span>
-      <span>${escapeHtml(cat.name)}</span>
-      <button class="link-button" data-remove-category="${cat.id}" ${cat.id === 'study' ? 'disabled' : ''}>삭제</button>
+      <span>${escapeHtml(cat.name)}<small class="phase-tag">${escapeHtml(cat.phase || '기타')}</small></span>
+      <button class="link-button" data-remove-category="${cat.id}" ${cat.id === firstId ? 'disabled' : ''}>삭제</button>
     </div>`).join('');
 }
 
@@ -409,10 +645,16 @@ function startSession() {
   }
   const title = $('#intentionInput').value.trim() || '제목 없는 세션';
   const categoryId = $('#categorySelect').value || data.categories[0].id;
+  const sessionType = normalizeStudyType($('#sessionTypeSelect').value);
+  const round = normalizeRound($('#roundSelect').value);
+  const part = $('#partInput').value.trim();
   data.activeSession = {
     id: `s_${Date.now()}`,
     title,
     categoryId,
+    sessionType,
+    round,
+    part,
     targetMinutes: selectedPresetMinutes,
     startAt: new Date().toISOString(),
     endAt: null,
@@ -463,11 +705,13 @@ function finishSession() {
   data.sessions.push(session);
   data.activeSession = null;
   $('#reflectionNote').value = '';
+  $('#partInput').value = '';
   saveData('세션 종료');
   if (data.settings.sound) playDing();
   renderAll();
   switchView('dashboard');
   toast('세션 기록을 저장했습니다.');
+  queueAutoGitHubBackup();
 }
 
 function playDing() {
@@ -488,22 +732,50 @@ function playDing() {
   }
 }
 
-function saveSettings() {
+function applySettingsFromForm() {
   const target = Number($('#targetHours').value);
   data.settings.dailyTargetHours = Number.isFinite(target) ? Math.max(0.5, Math.min(16, target)) : 6;
   data.settings.sound = $('#soundToggle').checked;
   data.settings.autoReflection = $('#autoReflectionToggle').checked;
+  const examDateInput = $('#examDateInput')?.value;
+  data.settings.examDate = examDateInput || null;
+
+  const currentGithub = data.settings.githubBackup || structuredClone(DEFAULT_DATA.settings.githubBackup);
+  data.settings.githubBackup = {
+    ...structuredClone(DEFAULT_DATA.settings.githubBackup),
+    ...currentGithub,
+    enabled: !!$('#githubBackupEnabled')?.checked,
+    autoOnSessionEnd: !!$('#githubAutoOnSessionEnd')?.checked,
+    owner: $('#githubOwner')?.value.trim() || '',
+    repo: $('#githubRepo')?.value.trim() || '',
+    branch: $('#githubBranch')?.value.trim() || 'main',
+    path: $('#githubPath')?.value.trim() || 'data/focusmanager_backup.json',
+    token: $('#githubToken')?.value.trim() || '',
+  };
+}
+
+function saveSettings() {
+  applySettingsFromForm();
   saveData('설정 저장');
   renderAll();
   toast('설정을 저장했습니다.');
 }
 
+function dDayInfo() {
+  if (!data.settings.examDate) return null;
+  const today = new Date(`${todayKey()}T00:00:00`);
+  const target = new Date(`${data.settings.examDate}T00:00:00`);
+  const diffDays = Math.round((target - today) / 86400000);
+  return { diffDays, label: diffDays > 0 ? `D-${diffDays}` : diffDays === 0 ? 'D-DAY' : `D+${Math.abs(diffDays)}` };
+}
+
 function addCategory() {
   const name = $('#newCategoryName').value.trim();
-  const color = $('#newCategoryColor').value || '#ef4e4e';
+  const color = $('#newCategoryColor').value || '#c9a227';
+  const phase = $('#newCategoryPhase')?.value || '기타';
   if (!name) return toast('카테고리명을 입력하세요.');
   const id = `cat_${Date.now()}`;
-  data.categories.push({ id, name, color });
+  data.categories.push({ id, name, color, phase });
   $('#newCategoryName').value = '';
   saveData('카테고리 추가');
   renderAll();
@@ -511,11 +783,12 @@ function addCategory() {
 }
 
 function removeCategory(id) {
-  if (id === 'study') return;
+  const fallbackId = data.categories[0]?.id;
+  if (id === fallbackId) return;
   const used = data.sessions.some((s) => s.categoryId === id) || data.activeSession?.categoryId === id;
-  if (used && !confirm('이미 사용된 카테고리입니다. 삭제하면 해당 기록이 공부 카테고리로 이동합니다. 계속할까요?')) return;
-  data.sessions.forEach((s) => { if (s.categoryId === id) s.categoryId = 'study'; });
-  if (data.activeSession?.categoryId === id) data.activeSession.categoryId = 'study';
+  if (used && !confirm(`이미 사용된 카테고리입니다. 삭제하면 해당 기록이 "${getCategory(fallbackId).name}" 카테고리로 이동합니다. 계속할까요?`)) return;
+  data.sessions.forEach((s) => { if (s.categoryId === id) s.categoryId = fallbackId; });
+  if (data.activeSession?.categoryId === id) data.activeSession.categoryId = fallbackId;
   data.categories = data.categories.filter((cat) => cat.id !== id);
   saveData('카테고리 삭제');
   renderAll();
@@ -523,7 +796,7 @@ function removeCategory(id) {
 }
 
 function exportBackup() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(makeBackupEnvelope(), null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -539,11 +812,13 @@ async function importBackup(file) {
   try {
     const text = await file.text();
     const imported = JSON.parse(text);
-    if (!Array.isArray(imported.sessions) || !Array.isArray(imported.categories)) throw new Error('invalid data');
-    data = {
-      ...structuredClone(DEFAULT_DATA),
-      ...imported,
-      settings: { ...DEFAULT_DATA.settings, ...(imported.settings || {}) },
+    const currentGithub = data.settings.githubBackup;
+    data = normalizeImportedData(imported);
+    data.settings.githubBackup = {
+      ...DEFAULT_DATA.settings.githubBackup,
+      ...currentGithub,
+      lastRestoreAt: new Date().toISOString(),
+      lastStatus: 'JSON 백업 복원 완료',
     };
     saveData('백업 복원');
     renderAll();
@@ -554,12 +829,218 @@ async function importBackup(file) {
   }
 }
 
+function githubStatusText(github) {
+  const lines = [];
+  lines.push(`<strong>${escapeHtml(github.lastStatus || 'GitHub 백업 미설정')}</strong>`);
+  if (github.lastBackupAt) lines.push(`마지막 백업: ${escapeHtml(formatDateTime(github.lastBackupAt))}`);
+  if (github.lastRestoreAt) lines.push(`마지막 복원: ${escapeHtml(formatDateTime(github.lastRestoreAt))}`);
+  if (!github.token) lines.push('토큰은 이 기기 localStorage에만 저장됩니다. GitHub 백업 파일에는 포함하지 않습니다.');
+  return lines.map((line) => `<span>${line}</span>`).join('');
+}
+
+function formatDateTime(value) {
+  try {
+    return new Intl.DateTimeFormat('ko-KR', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(new Date(value));
+  } catch (error) {
+    return value;
+  }
+}
+
+function githubConfig() {
+  const github = data.settings.githubBackup || DEFAULT_DATA.settings.githubBackup;
+  return {
+    ...github,
+    owner: (github.owner || '').trim(),
+    repo: (github.repo || '').trim(),
+    branch: (github.branch || 'main').trim(),
+    path: (github.path || 'data/focusmanager_backup.json').trim().replace(/^\/+/, ''),
+    token: (github.token || '').trim(),
+  };
+}
+
+function validateGithubConfig(config, needToken = true) {
+  if (!config.owner || !config.repo || !config.branch || !config.path) throw new Error('GitHub owner/repo/branch/path 설정이 필요합니다.');
+  if (needToken && !config.token) throw new Error('GitHub fine-grained token 또는 classic token이 필요합니다.');
+}
+
+function githubContentsUrl(config) {
+  const path = config.path.split('/').map(encodeURIComponent).join('/');
+  return `https://api.github.com/repos/${encodeURIComponent(config.owner)}/${encodeURIComponent(config.repo)}/contents/${path}`;
+}
+
+async function githubApi(url, options = {}, config = githubConfig()) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    ...(options.headers || {}),
+  };
+  if (config.token) headers.Authorization = `Bearer ${config.token}`;
+  if (options.body) headers['Content-Type'] = 'application/json';
+  const response = await fetch(url, { ...options, headers });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = new Error(payload?.message || `GitHub API 오류: ${response.status}`);
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
+  return payload;
+}
+
+function toBase64Unicode(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = '';
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+
+function fromBase64Unicode(base64) {
+  const binary = atob(base64.replace(/\s/g, ''));
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function setGithubStatus(status) {
+  data.settings.githubBackup = {
+    ...DEFAULT_DATA.settings.githubBackup,
+    ...(data.settings.githubBackup || {}),
+    lastStatus: status,
+  };
+  const el = $('#githubBackupStatus');
+  if (el) el.innerHTML = githubStatusText(data.settings.githubBackup);
+}
+
+async function backupToGitHub(manual = true) {
+  applySettingsFromForm();
+  const config = githubConfig();
+  try {
+    validateGithubConfig(config, true);
+    setGithubStatus('GitHub 백업 중...');
+    const url = githubContentsUrl(config);
+    let sha = null;
+    try {
+      const current = await githubApi(`${url}?ref=${encodeURIComponent(config.branch)}`, {}, config);
+      sha = current.sha || null;
+    } catch (error) {
+      if (error.status !== 404) throw error;
+    }
+    const body = {
+      message: `FocusManager backup ${new Date().toISOString()}`,
+      branch: config.branch,
+      content: toBase64Unicode(JSON.stringify(makeBackupEnvelope(), null, 2)),
+      ...(sha ? { sha } : {}),
+    };
+    await githubApi(url, { method: 'PUT', body: JSON.stringify(body) }, config);
+    data.settings.githubBackup.lastBackupAt = new Date().toISOString();
+    data.settings.githubBackup.lastStatus = manual ? 'GitHub 수동 백업 완료' : '세션 종료 자동 백업 완료';
+    saveData(manual ? 'GitHub 백업 완료' : '자동 백업 완료');
+    renderSettings();
+    toast(manual ? 'GitHub 백업을 완료했습니다.' : '세션 종료 자동 백업 완료');
+  } catch (error) {
+    console.error(error);
+    data.settings.githubBackup.lastStatus = `GitHub 백업 실패: ${error.message}`;
+    saveData('GitHub 백업 실패');
+    renderSettings();
+    if (manual) toast('GitHub 백업 설정을 확인해주세요.');
+  }
+}
+
+async function restoreFromGitHub() {
+  applySettingsFromForm();
+  const config = githubConfig();
+  try {
+    validateGithubConfig(config, false);
+    if (!confirm('GitHub 백업 데이터로 현재 기록을 덮어쓸까요? 현재 기기의 GitHub 설정은 유지됩니다.')) return;
+    setGithubStatus('GitHub 복원 중...');
+    const url = `${githubContentsUrl(config)}?ref=${encodeURIComponent(config.branch)}`;
+    const file = await githubApi(url, {}, config);
+    const imported = JSON.parse(fromBase64Unicode(file.content));
+    const currentGithub = data.settings.githubBackup;
+    data = normalizeImportedData(imported);
+    data.settings.githubBackup = {
+      ...DEFAULT_DATA.settings.githubBackup,
+      ...currentGithub,
+      lastRestoreAt: new Date().toISOString(),
+      lastStatus: 'GitHub 백업 복원 완료',
+    };
+    saveData('GitHub 복원');
+    renderAll();
+    toast('GitHub 백업을 복원했습니다.');
+  } catch (error) {
+    console.error(error);
+    data.settings.githubBackup.lastStatus = `GitHub 복원 실패: ${error.message}`;
+    saveData('GitHub 복원 실패');
+    renderSettings();
+    toast('GitHub 복원 설정을 확인해주세요.');
+  }
+}
+
+function clearGithubToken() {
+  data.settings.githubBackup = {
+    ...DEFAULT_DATA.settings.githubBackup,
+    ...(data.settings.githubBackup || {}),
+    token: '',
+    lastStatus: 'GitHub 토큰 삭제됨',
+  };
+  const tokenInput = $('#githubToken');
+  if (tokenInput) tokenInput.value = '';
+  saveData('GitHub 토큰 삭제');
+  renderSettings();
+  toast('GitHub 토큰을 삭제했습니다.');
+}
+
+function queueAutoGitHubBackup() {
+  const github = data.settings.githubBackup || {};
+  if (!github.enabled || !github.autoOnSessionEnd || !github.owner || !github.repo || !github.token) return;
+  backupToGitHub(false);
+}
+
 function resetData() {
   if (!confirm('모든 세션 기록과 설정을 초기화할까요?')) return;
   data = structuredClone(DEFAULT_DATA);
   saveData('초기화');
   renderAll();
   toast('데이터를 초기화했습니다.');
+}
+
+
+function normalizeStudyType(type) {
+  return STUDY_TYPE_LABELS[type] ? type : 'theory';
+}
+
+function normalizeRound(round) {
+  return ROUND_LABELS[round] ? round : 'none';
+}
+
+function studyTypeLabel(type) {
+  return STUDY_TYPE_LABELS[normalizeStudyType(type)];
+}
+
+function roundLabel(round) {
+  return ROUND_LABELS[normalizeRound(round)];
+}
+
+function sessionMetaParts(session) {
+  const parts = [studyTypeLabel(session.sessionType)];
+  const round = normalizeRound(session.round);
+  if (round !== 'none') parts.push(roundLabel(round));
+  if (session.part) parts.push(session.part);
+  return parts;
+}
+
+function sessionMetaText(session) {
+  return sessionMetaParts(session).join(' · ');
+}
+
+function sessionMetaHtml(session) {
+  return sessionMetaParts(session).map((part) => escapeHtml(part)).join(' · ');
+}
+
+function sessionMetaBadges(session) {
+  return sessionMetaParts(session).map((part) => `<span class="meta-badge">${escapeHtml(part)}</span>`).join('');
 }
 
 function moodLabel(mood) {
@@ -579,6 +1060,67 @@ function escapeAttr(value) {
   return escapeHtml(value).replaceAll('`', '&#096;');
 }
 
+function openEditModal(id) {
+  const session = data.sessions.find((s) => s.id === id);
+  if (!session) return;
+  editingSessionId = id;
+  $('#editTitle').value = session.title || '';
+  renderEditCategoryOptions(session.categoryId);
+  $('#editSessionType').value = normalizeStudyType(session.sessionType);
+  $('#editRound').value = normalizeRound(session.round);
+  $('#editPart').value = session.part || '';
+  $$('#editMoodRow .mood').forEach((btn) => btn.classList.toggle('active', btn.dataset.editMood === (session.mood || 'neutral')));
+  $('#editNote').value = session.note || '';
+  $('#editModal').hidden = false;
+}
+
+function closeEditModal() {
+  $('#editModal').hidden = true;
+  editingSessionId = null;
+}
+
+function renderEditCategoryOptions(selectedId) {
+  const select = $('#editCategory');
+  const groups = new Map();
+  data.categories.forEach((cat) => {
+    const key = cat.phase || '기타';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(cat);
+  });
+  select.innerHTML = Array.from(groups.entries()).map(([phase, cats]) => `
+    <optgroup label="${escapeAttr(phase)}">
+      ${cats.map((cat) => `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`).join('')}
+    </optgroup>`).join('');
+  select.value = selectedId;
+}
+
+function saveSessionEdit() {
+  const session = data.sessions.find((s) => s.id === editingSessionId);
+  if (!session) return;
+  session.title = $('#editTitle').value.trim() || '제목 없는 세션';
+  session.categoryId = $('#editCategory').value || session.categoryId;
+  session.sessionType = normalizeStudyType($('#editSessionType').value);
+  session.round = normalizeRound($('#editRound').value);
+  session.part = $('#editPart').value.trim();
+  const activeMoodBtn = $('#editMoodRow .mood.active');
+  session.mood = activeMoodBtn ? activeMoodBtn.dataset.editMood : session.mood;
+  session.note = $('#editNote').value.trim();
+  saveData('세션 수정');
+  closeEditModal();
+  renderAll();
+  toast('세션 기록을 수정했습니다.');
+}
+
+function deleteSessionRecord() {
+  if (!editingSessionId) return;
+  if (!confirm('이 세션 기록을 삭제할까요? 되돌릴 수 없습니다.')) return;
+  data.sessions = data.sessions.filter((s) => s.id !== editingSessionId);
+  saveData('세션 삭제');
+  closeEditModal();
+  renderAll();
+  toast('세션 기록을 삭제했습니다.');
+}
+
 function bindEvents() {
   document.addEventListener('click', (event) => {
     const nav = event.target.closest('[data-view]');
@@ -592,6 +1134,28 @@ function bindEvents() {
 
     const removeBtn = event.target.closest('[data-remove-category]');
     if (removeBtn && !removeBtn.disabled) removeCategory(removeBtn.dataset.removeCategory);
+
+    const editTrigger = event.target.closest('[data-edit-session]');
+    if (editTrigger) openEditModal(editTrigger.dataset.editSession);
+
+    const editMoodBtn = event.target.closest('[data-edit-mood]');
+    if (editMoodBtn) {
+      $$('#editMoodRow .mood').forEach((item) => item.classList.remove('active'));
+      editMoodBtn.classList.add('active');
+    }
+
+    if (event.target.closest('#editSaveBtn')) saveSessionEdit();
+    if (event.target.closest('#editCancelBtn')) closeEditModal();
+    if (event.target.closest('#editDeleteBtn')) deleteSessionRecord();
+    if (event.target.id === 'editModal') closeEditModal();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !$('#editModal').hidden) closeEditModal();
+    if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-edit-session]')) {
+      event.preventDefault();
+      openEditModal(event.target.dataset.editSession);
+    }
   });
 
   $$('.chip').forEach((chip) => chip.addEventListener('click', () => {
@@ -600,11 +1164,14 @@ function bindEvents() {
     selectedPresetMinutes = Number(chip.dataset.minutes || 0);
   }));
 
-  $$('.mood').forEach((mood) => mood.addEventListener('click', () => {
-    $$('.mood').forEach((item) => item.classList.remove('active'));
-    mood.classList.add('active');
-    selectedMood = mood.dataset.mood;
-  }));
+  $$('.mood').forEach((mood) => {
+    if (mood.dataset.editMood) return;
+    mood.addEventListener('click', () => {
+      $$('.mood').forEach((item) => { if (!item.dataset.editMood) item.classList.remove('active'); });
+      mood.classList.add('active');
+      selectedMood = mood.dataset.mood;
+    });
+  });
 
   $('#quickSessionBtn').addEventListener('click', () => switchView('session'));
   $('#dashboardStartBtn').addEventListener('click', () => data.activeSession ? switchView('session') : startSession());
@@ -617,6 +1184,9 @@ function bindEvents() {
   $('#addCategoryBtn').addEventListener('click', addCategory);
   $('#exportBtn').addEventListener('click', exportBackup);
   $('#importFile').addEventListener('change', (event) => importBackup(event.target.files[0]));
+  $('#githubBackupBtn')?.addEventListener('click', () => backupToGitHub(true));
+  $('#githubRestoreBtn')?.addEventListener('click', restoreFromGitHub);
+  $('#clearGithubTokenBtn')?.addEventListener('click', clearGithubToken);
   $('#resetBtn').addEventListener('click', resetData);
 
   window.addEventListener('beforeinstallprompt', (event) => {
