@@ -3,12 +3,12 @@
   "backupVersion": "1.0",
   "version": "1.2.0",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-08T09:56:07.745Z",
+  "backupAt": "2026-07-08T12:01:02.415Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.2.0",
     "settings": {
-      "dailyTargetHours": 6,
+      "dailyTargetHours": 10,
       "sound": true,
       "autoReflection": true,
       "examDate": null,
@@ -20,7 +20,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": null,
+        "lastBackupAt": "2026-07-08T09:56:08.791Z",
         "lastRestoreAt": null,
         "lastStatus": "GitHub 백업 중..."
       }
@@ -81,8 +81,25 @@
         "phase": "기타"
       }
     ],
-    "sessions": [],
+    "sessions": [
+      {
+        "id": "s_1783505425819",
+        "title": "제목 없는 세션",
+        "categoryId": "theory",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "보험료",
+        "targetMinutes": 0,
+        "startAt": "2026-07-08T10:10:25.819Z",
+        "endAt": "2026-07-08T12:01:00.219Z",
+        "pauses": [],
+        "isPaused": false,
+        "mood": "focused",
+        "note": "보험료 포함 파트2 보험계약의 성립 평가문제까지 끝냄",
+        "status": "completed"
+      }
+    ],
     "activeSession": null,
-    "updatedAt": "2026-07-08T09:39:45.152Z"
+    "updatedAt": "2026-07-08T12:01:00.219Z"
   }
 }
