@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.0",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-08T13:14:31.048Z",
+  "backupAt": "2026-07-08T14:25:50.926Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.0",
@@ -20,13 +20,13 @@
       "githubBackup": {
         "enabled": true,
         "owner": "Justin-1984",
-        "repo": "Focus-Manager",
+        "repo": "Focus-manager",
         "branch": "main",
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-08T12:53:18.036Z",
-        "lastRestoreAt": null,
+        "lastBackupAt": null,
+        "lastRestoreAt": "2026-07-08T14:23:51.643Z",
         "lastStatus": "GitHub 백업 중..."
       }
     },
@@ -114,8 +114,25 @@
         "status": "completed"
       }
     ],
-    "plans": [],
+    "plans": [
+      {
+        "id": "p_1783520740084",
+        "date": "2026-07-09",
+        "title": "손해사정이론 끝내기",
+        "categoryId": "theory",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "13-25강",
+        "startTime": "09:00",
+        "endTime": "22:30",
+        "targetMinutes": 600,
+        "status": "planned",
+        "linkedSessionId": null,
+        "createdAt": "2026-07-08T14:25:40.084Z",
+        "completedAt": null
+      }
+    ],
     "activeSession": null,
-    "updatedAt": "2026-07-08T13:14:21.423Z"
+    "updatedAt": "2026-07-08T14:25:40.084Z"
   }
 }
