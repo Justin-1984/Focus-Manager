@@ -2,8 +2,8 @@
 
 ## Current baseline
 
-- Current version: v1.2.2
-- Baseline type: Sticky Clock UX update on v1.2.1 Modal Hotfix
+- Current version: v1.3.0
+- Baseline type: Study Planner Foundation on v1.2.2 Sticky Clock
 - Storage: localStorage first
 - Storage key: `focus_manager_v1` unchanged
 - Backup: JSON export/import + GitHub manual backup/restore + optional session-end auto backup
@@ -26,39 +26,44 @@
 - Service worker syntax check passed with `node --check sw.js`.
 - Manifest JSON structure validated.
 - DOM id references used by app.js were cross-checked against index.html.
-- Existing storage key and base data shape were preserved.
+- Basic mocked runtime smoke test passed.
+- Existing storage key was preserved.
 
-## v1.2.2 additions
+## v1.3.0 additions
 
-- Added fixed current-time badge at the top of the screen
-- The time remains visible while scrolling long pages
-- Added iPhone/iPad safe-area aware positioning
-- Added non-blocking `pointer-events: none` behavior for the clock badge
-- Updated service worker cache to `focusmanager-v1-2-2`
+- Added Planner navigation item
+- Added internal study planner screen
+- Added daily total goal setting
+- Added weekly goal setting
+- Added category-level daily and weekly goals
+- Added date-based study plan creation
+- Added planned session list by selected date
+- Added direct session start from a planned item
+- Added “load plan into session form” action
+- Added planned session completion linkage to actual session record
+- Added plan deletion
+- Added dashboard “오늘 계획” card
+- Added dashboard “목표 달성률” card
+- Added plan-vs-actual achievement display
+- Added `plans` to backup payload
+- Added `weeklyTargetHours` and `categoryGoals` to settings
+- Updated service worker cache to `focusmanager-v1-3-0`
 
-## v1.2.1 hotfix additions
+## Retained from v1.2.x
 
-- Fixed mobile/Safari modal overlay hidden-state bug
-- Added explicit global `[hidden]` and `.modal-overlay[hidden]` rules
-- Added close button to the session edit modal
-- Improved mobile modal scroll and button access
-- Updated service worker cache to `focusmanager-v1-2-1`
-
-## v1.2.0 additions
-
-- GitHub backup settings panel
+- Fixed top current-time badge
+- GitHub backup settings
 - GitHub manual backup
 - GitHub restore
-- Session-end automatic backup option
-- GitHub backup status display
-- Last backup/restore timestamp fields
-- GitHub token clear button
-- Backup envelope format for JSON/GitHub backups
-- Token exclusion from backup payload
-- Import compatibility for old raw JSON backups and new envelope backups
+- Optional session-end automatic GitHub backup
+- GitHub token exclusion from backup payload
+- JSON backup/restore
+- Mobile modal hidden-state hotfix
+- Session edit modal
 
-## v1.1.2 retained features
+## Retained from v1.1.x
 
+- 손해사정사 과목 카테고리
 - Session type field
   - 이론 / 기출 / 암기 / 오답 / 답안작성 / 복습 / 기타
 - Round field
@@ -69,18 +74,34 @@
 - Round status report
 - Study metadata badges in recent records and mini timeline
 
+## Data shape
+
+Core data remains FocusManager-only.
+
+```text
+settings
+categories
+sessions
+plans
+activeSession
+```
+
+`plans` are internal FocusManager study plans. They are not Apple Calendar or Google Calendar events.
+
 ## Do not change casually
 
 - Local data key: `focus_manager_v1`
-- Core data shape: settings, categories, sessions, activeSession
+- FocusManager-only backup payload
+- GitHub token exclusion from backup payload
 - Session lifecycle: active → paused/resumed → completed
 - Category phase grouping: 1차 / 2차 / 기타
 - Existing JSON backup/restore compatibility
-- GitHub backup should remain FocusManager-only and must not include AssetManager/BenefitManager data models
 - PWA deployment assumptions for GitHub Pages
 
 ## Known limitations
 
+- No Apple Calendar integration by design in this version
+- No Google Calendar integration
 - No real-time multi-device sync yet
 - No automatic conflict merge yet
 - GitHub restore overwrites current local data after confirmation
@@ -89,17 +110,12 @@
 
 ## Next recommended update
 
-v1.2.3 should focus on backup UX stabilization:
+v1.3.1 should focus on planner UX stabilization:
 
-- 백업 성공/실패 메시지 더 명확하게 표시
-- 복원 전 백업 파일 요약 미리보기
-- 마지막 백업 카드 대시보드 표시 여부 검토
-- 토큰/저장소 설정 안내 문구 보강
+- 계획 수정 기능
+- 계획 복사/다음 날로 복제
+- 오늘 미완료 계획 표시 개선
+- 계획 완료율 주간 요약
+- 모바일 플래너 입력 폼 간격 조정
 
-After that, v1.3 should return to exam-study dashboard improvements:
-
-- 오늘 공부량 요약 카드
-- 과목별 누적 시간
-- 과목별 회독 진행률
-- 목표 대비 부족 시간
-- 시험일 기준 남은 기간별 공부 페이스 표시
+After that, v1.4 can strengthen exam-study dashboard reporting.

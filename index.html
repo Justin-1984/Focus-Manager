@@ -23,13 +23,14 @@
         <div class="brand-mark">F</div>
         <div>
           <strong>FocusManager</strong>
-          <span>v1.2.2 · 고정 시계</span>
+          <span>v1.3.0 · 공부 플래너</span>
         </div>
       </div>
       <nav class="nav-list">
         <button class="nav-item active" data-view="dashboard">대시보드</button>
         <button class="nav-item" data-view="session">세션</button>
         <button class="nav-item" data-view="timeline">타임라인</button>
+        <button class="nav-item" data-view="planner">플래너</button>
         <button class="nav-item" data-view="reports">리포트</button>
         <button class="nav-item" data-view="settings">설정</button>
       </nav>
@@ -84,6 +85,17 @@
           <article class="metric-card"><span>세션 수</span><strong id="metricSessionCount">0</strong><small>오늘 완료</small></article>
           <article class="metric-card"><span>최장 세션</span><strong id="metricLongest">0m</strong><small>오늘 기준</small></article>
           <article class="metric-card"><span>가장 많은 카테고리</span><strong id="metricTopCategory">-</strong><small>오늘 기준</small></article>
+        </div>
+
+        <div class="two-column dashboard-planning">
+          <section class="panel-card">
+            <div class="panel-head"><h3>오늘 계획</h3><button class="link-button" data-jump="planner">계획 보기</button></div>
+            <div id="dashboardPlanList" class="plan-list compact-plan-list"></div>
+          </section>
+          <section class="panel-card">
+            <div class="panel-head"><h3>목표 달성률</h3><button class="link-button" data-jump="planner">목표 설정</button></div>
+            <div id="dashboardGoalSummary" class="pattern-report"></div>
+          </section>
         </div>
 
         <div class="two-column">
@@ -186,6 +198,83 @@
             <input type="date" id="timelineDate" class="date-input" />
           </div>
           <div class="timeline-wrapper" id="timelineWrapper"></div>
+        </div>
+      </section>
+
+      <section id="plannerView" class="view">
+        <div class="planner-grid">
+          <section class="panel-card wide-report">
+            <div class="panel-head wrap-head">
+              <div>
+                <p class="eyebrow">Study Planner</p>
+                <h2>목표와 공부 계획</h2>
+                <p class="muted">앱 내부 플래너입니다. Apple Calendar 연동 없이 날짜별 계획과 실제 집중 기록을 비교합니다.</p>
+              </div>
+              <input type="date" id="plannerDate" class="date-input" />
+            </div>
+            <div id="plannerSummary" class="planner-summary"></div>
+          </section>
+
+          <section class="panel-card">
+            <h3>목표 설정</h3>
+            <div class="goal-input-grid">
+              <label class="field-label" for="dailyGoalInput">오늘 총 공부 목표<input id="dailyGoalInput" class="text-input" type="number" min="0.5" max="16" step="0.5" /></label>
+              <label class="field-label" for="weeklyGoalInput">이번 주 목표<input id="weeklyGoalInput" class="text-input" type="number" min="1" max="100" step="0.5" /></label>
+            </div>
+            <h3 class="subsection-title">과목별 목표</h3>
+            <div id="categoryGoalEditor" class="goal-editor"></div>
+            <button class="primary-button" id="savePlannerGoalsBtn">목표 저장</button>
+          </section>
+
+          <section class="panel-card">
+            <h3>계획 추가</h3>
+            <label class="field-label" for="planIntention">의도 / 할 일</label>
+            <input id="planIntention" class="text-input" placeholder="예: 의학이론 뼈/신경 2강 복습" autocomplete="off" />
+            <label class="field-label" for="planCategory">과목 / 카테고리</label>
+            <select id="planCategory" class="text-input"></select>
+            <div class="study-meta-grid">
+              <div>
+                <label class="field-label" for="planType">세션 타입</label>
+                <select id="planType" class="text-input">
+                  <option value="theory">이론</option>
+                  <option value="past">기출</option>
+                  <option value="memorize">암기</option>
+                  <option value="wrong">오답</option>
+                  <option value="answer">답안작성</option>
+                  <option value="review">복습</option>
+                  <option value="etc">기타</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="planRound">회독 단계</label>
+                <select id="planRound" class="text-input">
+                  <option value="none">미지정</option>
+                  <option value="1">1회독</option>
+                  <option value="2">2회독</option>
+                  <option value="3">3회독</option>
+                  <option value="4">4회독</option>
+                  <option value="5plus">5회독+</option>
+                  <option value="final">최종정리</option>
+                </select>
+              </div>
+            </div>
+            <label class="field-label" for="planPart">파트 / 범위</label>
+            <input id="planPart" class="text-input" placeholder="예: 약관 교부설명의무, 기출 1~20번" autocomplete="off" />
+            <div class="plan-time-grid">
+              <label class="field-label" for="planStart">시작<input id="planStart" class="text-input" type="time" /></label>
+              <label class="field-label" for="planEnd">종료<input id="planEnd" class="text-input" type="time" /></label>
+              <label class="field-label" for="planMinutes">목표 분<input id="planMinutes" class="text-input" type="number" min="5" max="600" step="5" placeholder="자동" /></label>
+            </div>
+            <button class="primary-button" id="addPlanBtn">계획 추가</button>
+          </section>
+
+          <section class="panel-card wide-report">
+            <div class="panel-head">
+              <h3>선택 날짜 계획</h3>
+              <button class="link-button" data-jump="session">직접 세션 시작</button>
+            </div>
+            <div id="planList" class="plan-list"></div>
+          </section>
         </div>
       </section>
 
@@ -302,6 +391,7 @@
       <button class="mobile-nav-item active" data-view="dashboard">홈</button>
       <button class="mobile-nav-item" data-view="session">세션</button>
       <button class="mobile-nav-item" data-view="timeline">기록</button>
+      <button class="mobile-nav-item" data-view="planner">계획</button>
       <button class="mobile-nav-item" data-view="reports">분석</button>
       <button class="mobile-nav-item" data-view="settings">설정</button>
     </nav>

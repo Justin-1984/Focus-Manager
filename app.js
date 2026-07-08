@@ -1,8 +1,10 @@
 const STORAGE_KEY = 'focus_manager_v1';
 const DEFAULT_DATA = {
-  version: '1.2.2',
+  version: '1.3.0',
   settings: {
     dailyTargetHours: 6,
+    weeklyTargetHours: 40,
+    categoryGoals: { daily: {}, weekly: {} },
     sound: true,
     autoReflection: true,
     examDate: null,
@@ -31,6 +33,7 @@ const DEFAULT_DATA = {
     { id: 'break', name: '휴식', color: '#7d7772', phase: '기타' },
   ],
   sessions: [],
+  plans: [],
   activeSession: null,
 };
 
@@ -50,6 +53,7 @@ const pageTitles = {
   dashboard: '대시보드',
   session: '세션',
   timeline: '타임라인',
+  planner: '플래너',
   reports: '리포트',
   settings: '설정',
 };
@@ -79,10 +83,37 @@ function mergeSettings(settings = {}) {
     ...DEFAULT_DATA.settings.githubBackup,
     ...(settings.githubBackup || {}),
   };
+  const categoryGoals = {
+    daily: { ...(settings.categoryGoals?.daily || {}) },
+    weekly: { ...(settings.categoryGoals?.weekly || {}) },
+  };
   return {
     ...DEFAULT_DATA.settings,
     ...settings,
+    weeklyTargetHours: Number.isFinite(Number(settings.weeklyTargetHours)) ? Number(settings.weeklyTargetHours) : DEFAULT_DATA.settings.weeklyTargetHours,
+    categoryGoals,
     githubBackup,
+  };
+}
+
+function normalizePlan(plan = {}) {
+  const date = plan.date || todayKey();
+  const targetMinutes = Number(plan.targetMinutes || minutesBetween(plan.startTime, plan.endTime) || 25);
+  return {
+    id: plan.id || `p_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    date,
+    title: plan.title || plan.intention || '계획 없는 공부',
+    categoryId: plan.categoryId || DEFAULT_DATA.categories[0].id,
+    sessionType: normalizeStudyType(plan.sessionType),
+    round: normalizeRound(plan.round),
+    part: plan.part || '',
+    startTime: plan.startTime || '',
+    endTime: plan.endTime || '',
+    targetMinutes: Math.max(5, Math.min(600, targetMinutes || 25)),
+    status: plan.status || 'planned',
+    linkedSessionId: plan.linkedSessionId || null,
+    createdAt: plan.createdAt || new Date().toISOString(),
+    completedAt: plan.completedAt || null,
   };
 }
 
@@ -96,6 +127,7 @@ function normalizeImportedData(imported) {
     settings: mergeSettings(source.settings || {}),
     categories: source.categories.length ? source.categories : DEFAULT_DATA.categories,
     sessions: Array.isArray(source.sessions) ? source.sessions : [],
+    plans: Array.isArray(source.plans) ? source.plans.map(normalizePlan) : [],
     activeSession: source.activeSession || null,
   };
 }
@@ -222,6 +254,73 @@ function sessionsForDate(dateStr) {
   return completedSessions().filter((session) => todayKey(new Date(session.startAt)) === dateStr);
 }
 
+function minutesBetween(startTime, endTime) {
+  if (!startTime || !endTime) return 0;
+  const [sh, sm] = startTime.split(':').map(Number);
+  const [eh, em] = endTime.split(':').map(Number);
+  if (![sh, sm, eh, em].every(Number.isFinite)) return 0;
+  let start = sh * 60 + sm;
+  let end = eh * 60 + em;
+  if (end <= start) end += 24 * 60;
+  return end - start;
+}
+
+function planDurationMinutes(plan) {
+  return Math.max(5, Math.min(600, Number(plan.targetMinutes || minutesBetween(plan.startTime, plan.endTime) || 25)));
+}
+
+function plansForDate(dateStr) {
+  return (data.plans || []).filter((plan) => plan.date === dateStr).sort((a, b) => {
+    const at = a.startTime || '99:99';
+    const bt = b.startTime || '99:99';
+    return at.localeCompare(bt);
+  });
+}
+
+function weekKeysFor(dateStr = todayKey()) {
+  const date = new Date(`${dateStr}T00:00:00`);
+  const day = date.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() + diffToMonday);
+  return Array.from({ length: 7 }, (_, idx) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + idx);
+    return todayKey(d);
+  });
+}
+
+function actualMsForDate(dateStr, categoryId = null) {
+  let total = sessionsForDate(dateStr)
+    .filter((session) => !categoryId || session.categoryId === categoryId)
+    .reduce((sum, session) => sum + sessionDuration(session), 0);
+  if (dateStr === todayKey() && data.activeSession && (!categoryId || data.activeSession.categoryId === categoryId)) {
+    total += sessionDuration(data.activeSession);
+  }
+  return total;
+}
+
+function actualMsForWeek(dateStr = todayKey(), categoryId = null) {
+  return weekKeysFor(dateStr).reduce((sum, key) => sum + actualMsForDate(key, categoryId), 0);
+}
+
+function plannedMsForDate(dateStr, categoryId = null) {
+  return plansForDate(dateStr)
+    .filter((plan) => !categoryId || plan.categoryId === categoryId)
+    .reduce((sum, plan) => sum + planDurationMinutes(plan) * 60000, 0);
+}
+
+function linkedSessionForPlan(plan) {
+  return plan.linkedSessionId ? data.sessions.find((session) => session.id === plan.linkedSessionId) : null;
+}
+
+function planComputedStatus(plan) {
+  if (linkedSessionForPlan(plan)) return 'completed';
+  if (data.activeSession?.linkedPlanId === plan.id) return 'active';
+  return 'planned';
+}
+
+
 function startTicker() {
   if (tickTimer) clearInterval(tickTimer);
   tickTimer = setInterval(() => {
@@ -268,27 +367,41 @@ function renderAll(showToast = false) {
   renderActiveSession();
   renderDashboard();
   renderTimeline();
+  renderPlanner();
   renderReports();
   renderSettings();
   renderSuggestions();
   if (showToast) toast('화면을 업데이트했습니다.');
 }
 
-function renderCategorySelects() {
-  const select = $('#categorySelect');
-  if (!select) return;
-  const current = select.value || data.activeSession?.categoryId || data.categories[0]?.id;
+function categoryOptionsHtml(current) {
   const groups = new Map();
   data.categories.forEach((cat) => {
     const key = cat.phase || '기타';
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(cat);
   });
-  select.innerHTML = Array.from(groups.entries()).map(([phase, cats]) => `
+  return Array.from(groups.entries()).map(([phase, cats]) => `
     <optgroup label="${escapeAttr(phase)}">
-      ${cats.map((cat) => `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`).join('')}
+      ${cats.map((cat) => `<option value="${cat.id}" ${cat.id === current ? 'selected' : ''}>${escapeHtml(cat.name)}</option>`).join('')}
     </optgroup>`).join('');
-  select.value = data.categories.some((cat) => cat.id === current) ? current : data.categories[0]?.id;
+}
+
+function renderCategorySelects() {
+  const currentSessionCategory = $('#categorySelect')?.value || data.activeSession?.categoryId || data.categories[0]?.id;
+  const currentPlanCategory = $('#planCategory')?.value || data.categories[0]?.id;
+  const sessionSelect = $('#categorySelect');
+  if (sessionSelect) {
+    const selected = data.categories.some((cat) => cat.id === currentSessionCategory) ? currentSessionCategory : data.categories[0]?.id;
+    sessionSelect.innerHTML = categoryOptionsHtml(selected);
+    sessionSelect.value = selected;
+  }
+  const planSelect = $('#planCategory');
+  if (planSelect) {
+    const selected = data.categories.some((cat) => cat.id === currentPlanCategory) ? currentPlanCategory : data.categories[0]?.id;
+    planSelect.innerHTML = categoryOptionsHtml(selected);
+    planSelect.value = selected;
+  }
 }
 
 function renderDashboard() {
@@ -325,8 +438,33 @@ function renderDashboard() {
   $('#dashboardStartBtn').textContent = active ? '세션으로 이동' : '세션 시작';
   $('#dashboardEndBtn').hidden = !active;
 
+  renderDashboardPlans(today, todayMs, targetMs);
   renderMiniTimeline(todaySessions);
   renderRecentSessions();
+}
+
+function renderDashboardPlans(dateStr, actualMs, targetMs) {
+  const list = $('#dashboardPlanList');
+  const summary = $('#dashboardGoalSummary');
+  if (list) list.innerHTML = planListHtml(plansForDate(dateStr), true) || '<p class="muted">오늘 계획이 없습니다. 플래너에서 공부 계획을 추가하세요.</p>';
+  if (summary) {
+    const plannedMs = plannedMsForDate(dateStr);
+    const weekActual = actualMsForWeek(dateStr);
+    const weekTarget = (data.settings.weeklyTargetHours || 40) * 3600000;
+    summary.innerHTML = `
+      ${goalProgressHtml('오늘 목표', actualMs, targetMs || 1)}
+      ${goalProgressHtml('오늘 계획 대비', actualMs, plannedMs || 1)}
+      ${goalProgressHtml('이번 주 목표', weekActual, weekTarget || 1)}
+    `;
+  }
+}
+
+function goalProgressHtml(label, actualMs, targetMs) {
+  const pct = targetMs ? Math.min(100, Math.round((actualMs / targetMs) * 100)) : 0;
+  return `<div class="goal-progress">
+    <div class="goal-progress-head"><span>${escapeHtml(label)}</span><strong>${formatDuration(actualMs)} / ${formatDuration(targetMs)}</strong></div>
+    <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+  </div>`;
 }
 
 function topCategoryName(sessions) {
@@ -466,6 +604,189 @@ function timelineBlock(session, startHour, rowHeight, totalHours) {
     <strong>${escapeHtml(session.title || '제목 없는 세션')}</strong>
     <span>${formatClock(start)} - ${session.endAt ? formatClock(end) : '진행 중'} · ${formatDuration(sessionDuration(session))} · ${sessionMetaHtml(session)}</span>
   </div>`;
+}
+
+function renderPlanner() {
+  const dateInput = $('#plannerDate');
+  if (!dateInput) return;
+  if (!dateInput.value) dateInput.value = todayKey();
+  const dateStr = dateInput.value;
+  const dailyInput = $('#dailyGoalInput');
+  const weeklyInput = $('#weeklyGoalInput');
+  if (dailyInput) dailyInput.value = data.settings.dailyTargetHours || 6;
+  if (weeklyInput) weeklyInput.value = data.settings.weeklyTargetHours || 40;
+  renderPlannerSummary(dateStr);
+  renderCategoryGoalEditor(dateStr);
+  const planList = $('#planList');
+  if (planList) planList.innerHTML = planListHtml(plansForDate(dateStr), false) || '<p class="muted">선택한 날짜의 계획이 없습니다.</p>';
+}
+
+function renderPlannerSummary(dateStr) {
+  const el = $('#plannerSummary');
+  if (!el) return;
+  const actualMs = actualMsForDate(dateStr);
+  const plannedMs = plannedMsForDate(dateStr);
+  const dailyTargetMs = (data.settings.dailyTargetHours || 6) * 3600000;
+  const weekActualMs = actualMsForWeek(dateStr);
+  const weeklyTargetMs = (data.settings.weeklyTargetHours || 40) * 3600000;
+  const planCount = plansForDate(dateStr).length;
+  const doneCount = plansForDate(dateStr).filter((plan) => planComputedStatus(plan) === 'completed').length;
+  el.innerHTML = `
+    <div class="summary-tile"><span>선택 날짜 실제</span><strong>${formatDuration(actualMs)}</strong><small>목표 ${formatDuration(dailyTargetMs)}</small></div>
+    <div class="summary-tile"><span>계획 대비</span><strong>${plannedMs ? Math.round((actualMs / plannedMs) * 100) : 0}%</strong><small>${formatDuration(plannedMs)} 계획</small></div>
+    <div class="summary-tile"><span>계획 완료</span><strong>${doneCount}/${planCount}</strong><small>예정 세션 기준</small></div>
+    <div class="summary-tile"><span>이번 주 실제</span><strong>${formatDuration(weekActualMs)}</strong><small>목표 ${formatDuration(weeklyTargetMs)}</small></div>
+  `;
+}
+
+function renderCategoryGoalEditor(dateStr) {
+  const el = $('#categoryGoalEditor');
+  if (!el) return;
+  const goals = data.settings.categoryGoals || { daily: {}, weekly: {} };
+  el.innerHTML = data.categories.filter((cat) => cat.id !== 'break').map((cat) => {
+    const daily = goals.daily?.[cat.id] || '';
+    const weekly = goals.weekly?.[cat.id] || '';
+    const dailyMs = Number(daily || 0) * 3600000;
+    const weeklyMs = Number(weekly || 0) * 3600000;
+    const actualDaily = actualMsForDate(dateStr, cat.id);
+    const actualWeekly = actualMsForWeek(dateStr, cat.id);
+    const hint = [dailyMs ? `일 ${formatDuration(actualDaily)}/${formatDuration(dailyMs)}` : '', weeklyMs ? `주 ${formatDuration(actualWeekly)}/${formatDuration(weeklyMs)}` : ''].filter(Boolean).join(' · ');
+    return `<div class="goal-row">
+      <div class="goal-row-name"><span class="color-dot" style="background:${cat.color}"></span><div><strong>${escapeHtml(cat.name)}</strong><br><small class="muted">${hint || '목표 미설정'}</small></div></div>
+      <label class="field-label">일 목표<input class="text-input" data-goal-daily="${cat.id}" type="number" min="0" max="16" step="0.5" value="${escapeAttr(daily)}" /></label>
+      <label class="field-label">주 목표<input class="text-input" data-goal-weekly="${cat.id}" type="number" min="0" max="80" step="0.5" value="${escapeAttr(weekly)}" /></label>
+    </div>`;
+  }).join('');
+}
+
+function planListHtml(plans, compact = false) {
+  return plans.map((plan) => {
+    const cat = getCategory(plan.categoryId);
+    const status = planComputedStatus(plan);
+    const linked = linkedSessionForPlan(plan);
+    const timeText = plan.startTime && plan.endTime ? `${plan.startTime} - ${plan.endTime}` : `${planDurationMinutes(plan)}분 계획`;
+    const statusLabel = status === 'completed' ? '완료' : status === 'active' ? '진행 중' : '대기';
+    const statusClass = status === 'completed' ? 'done' : status === 'active' ? 'now' : '';
+    const cardClass = status === 'completed' ? ' completed' : status === 'active' ? ' active-plan' : '';
+    const linkedText = linked ? ` · 실제 ${formatDuration(sessionDuration(linked))}` : '';
+    const actions = compact ? '' : `<div class="plan-actions">
+      <button class="primary-button" data-start-plan="${plan.id}" ${status !== 'planned' ? 'disabled' : ''}>이 계획으로 시작</button>
+      <button class="ghost-button" data-fill-plan="${plan.id}" ${data.activeSession ? 'disabled' : ''}>세션에 불러오기</button>
+      <button class="ghost-button" data-delete-plan="${plan.id}">삭제</button>
+    </div>`;
+    return `<article class="plan-card${cardClass}" style="border-left:4px solid ${cat.color}">
+      <div class="plan-head">
+        <div><strong>${escapeHtml(plan.title || '계획 없는 공부')}</strong><div class="plan-meta">${escapeHtml(timeText)} · ${escapeHtml(cat.name)} · ${studyTypeLabel(plan.sessionType)} · ${roundLabel(plan.round)}${plan.part ? ` · ${escapeHtml(plan.part)}` : ''}${linkedText}</div></div>
+        <span class="plan-status ${statusClass}">${statusLabel}</span>
+      </div>
+      ${actions}
+    </article>`;
+  }).join('');
+}
+
+function savePlannerGoals() {
+  const daily = Number($('#dailyGoalInput')?.value);
+  const weekly = Number($('#weeklyGoalInput')?.value);
+  if (Number.isFinite(daily)) data.settings.dailyTargetHours = Math.max(0.5, Math.min(16, daily));
+  if (Number.isFinite(weekly)) data.settings.weeklyTargetHours = Math.max(1, Math.min(100, weekly));
+  const categoryGoals = { daily: {}, weekly: {} };
+  $$('[data-goal-daily]').forEach((input) => {
+    const val = Number(input.value);
+    if (Number.isFinite(val) && val > 0) categoryGoals.daily[input.dataset.goalDaily] = val;
+  });
+  $$('[data-goal-weekly]').forEach((input) => {
+    const val = Number(input.value);
+    if (Number.isFinite(val) && val > 0) categoryGoals.weekly[input.dataset.goalWeekly] = val;
+  });
+  data.settings.categoryGoals = categoryGoals;
+  const settingsTarget = $('#targetHours');
+  if (settingsTarget) settingsTarget.value = data.settings.dailyTargetHours;
+  saveData('목표 저장');
+  renderAll();
+  toast('공부 목표를 저장했습니다.');
+}
+
+function addPlan() {
+  const date = $('#plannerDate')?.value || todayKey();
+  const title = $('#planIntention')?.value.trim() || '계획 없는 공부';
+  const categoryId = $('#planCategory')?.value || data.categories[0]?.id;
+  const startTime = $('#planStart')?.value || '';
+  const endTime = $('#planEnd')?.value || '';
+  const manualMinutes = Number($('#planMinutes')?.value || 0);
+  const targetMinutes = Number.isFinite(manualMinutes) && manualMinutes > 0 ? manualMinutes : minutesBetween(startTime, endTime) || selectedPresetMinutes || 25;
+  const plan = normalizePlan({
+    id: `p_${Date.now()}`,
+    date,
+    title,
+    categoryId,
+    sessionType: $('#planType')?.value || 'theory',
+    round: $('#planRound')?.value || 'none',
+    part: $('#planPart')?.value.trim() || '',
+    startTime,
+    endTime,
+    targetMinutes,
+    status: 'planned',
+    createdAt: new Date().toISOString(),
+  });
+  data.plans = Array.isArray(data.plans) ? data.plans : [];
+  data.plans.push(plan);
+  ['#planIntention', '#planPart', '#planStart', '#planEnd', '#planMinutes'].forEach((selector) => { const el = $(selector); if (el) el.value = ''; });
+  saveData('계획 추가');
+  renderAll();
+  toast('공부 계획을 추가했습니다.');
+}
+
+function fillSessionFromPlan(planId) {
+  const plan = data.plans.find((item) => item.id === planId);
+  if (!plan || data.activeSession) return;
+  $('#intentionInput').value = plan.title || '';
+  $('#categorySelect').value = plan.categoryId;
+  $('#sessionTypeSelect').value = normalizeStudyType(plan.sessionType);
+  $('#roundSelect').value = normalizeRound(plan.round);
+  $('#partInput').value = plan.part || '';
+  selectedPresetMinutes = planDurationMinutes(plan);
+  $$('.chip').forEach((chip) => chip.classList.toggle('active', Number(chip.dataset.minutes || 0) === selectedPresetMinutes));
+  switchView('session');
+  toast('계획을 세션 화면에 불러왔습니다.');
+}
+
+function startPlanSession(planId) {
+  if (data.activeSession) return toast('진행 중인 세션을 먼저 종료하세요.');
+  const plan = data.plans.find((item) => item.id === planId);
+  if (!plan) return;
+  data.activeSession = {
+    id: `s_${Date.now()}`,
+    linkedPlanId: plan.id,
+    title: plan.title || '계획 없는 공부',
+    categoryId: plan.categoryId,
+    sessionType: normalizeStudyType(plan.sessionType),
+    round: normalizeRound(plan.round),
+    part: plan.part || '',
+    targetMinutes: planDurationMinutes(plan),
+    startAt: new Date().toISOString(),
+    endAt: null,
+    pauses: [],
+    isPaused: false,
+    mood: selectedMood,
+    note: '',
+    status: 'active',
+  };
+  plan.status = 'active';
+  saveData('계획 세션 시작');
+  renderAll();
+  switchView('session');
+  toast('계획 세션을 시작했습니다.');
+}
+
+function deletePlan(planId) {
+  const plan = data.plans.find((item) => item.id === planId);
+  if (!plan) return;
+  if (planComputedStatus(plan) === 'active') return toast('진행 중인 계획은 삭제할 수 없습니다.');
+  if (!confirm('이 공부 계획을 삭제할까요? 실제 세션 기록은 삭제되지 않습니다.')) return;
+  data.plans = data.plans.filter((item) => item.id !== planId);
+  saveData('계획 삭제');
+  renderAll();
+  toast('공부 계획을 삭제했습니다.');
 }
 
 function renderReports() {
@@ -727,6 +1048,14 @@ function finishSession() {
   session.isPaused = false;
   session.mood = selectedMood;
   session.note = $('#reflectionNote').value.trim();
+  if (session.linkedPlanId) {
+    const plan = data.plans.find((item) => item.id === session.linkedPlanId);
+    if (plan) {
+      plan.status = 'completed';
+      plan.linkedSessionId = session.id;
+      plan.completedAt = now;
+    }
+  }
   data.sessions.push(session);
   data.activeSession = null;
   $('#reflectionNote').value = '';
@@ -762,6 +1091,8 @@ function applySettingsFromForm() {
   data.settings.dailyTargetHours = Number.isFinite(target) ? Math.max(0.5, Math.min(16, target)) : 6;
   data.settings.sound = $('#soundToggle').checked;
   data.settings.autoReflection = $('#autoReflectionToggle').checked;
+  data.settings.weeklyTargetHours = Number.isFinite(Number(data.settings.weeklyTargetHours)) ? data.settings.weeklyTargetHours : DEFAULT_DATA.settings.weeklyTargetHours;
+  data.settings.categoryGoals = data.settings.categoryGoals || { daily: {}, weekly: {} };
   const examDateInput = $('#examDateInput')?.value;
   data.settings.examDate = examDateInput || null;
 
@@ -813,7 +1144,12 @@ function removeCategory(id) {
   const used = data.sessions.some((s) => s.categoryId === id) || data.activeSession?.categoryId === id;
   if (used && !confirm(`이미 사용된 카테고리입니다. 삭제하면 해당 기록이 "${getCategory(fallbackId).name}" 카테고리로 이동합니다. 계속할까요?`)) return;
   data.sessions.forEach((s) => { if (s.categoryId === id) s.categoryId = fallbackId; });
+  (data.plans || []).forEach((plan) => { if (plan.categoryId === id) plan.categoryId = fallbackId; });
   if (data.activeSession?.categoryId === id) data.activeSession.categoryId = fallbackId;
+  if (data.settings.categoryGoals) {
+    delete data.settings.categoryGoals.daily?.[id];
+    delete data.settings.categoryGoals.weekly?.[id];
+  }
   data.categories = data.categories.filter((cat) => cat.id !== id);
   saveData('카테고리 삭제');
   renderAll();
@@ -1140,6 +1476,13 @@ function deleteSessionRecord() {
   if (!editingSessionId) return;
   if (!confirm('이 세션 기록을 삭제할까요? 되돌릴 수 없습니다.')) return;
   data.sessions = data.sessions.filter((s) => s.id !== editingSessionId);
+  (data.plans || []).forEach((plan) => {
+    if (plan.linkedSessionId === editingSessionId) {
+      plan.linkedSessionId = null;
+      plan.completedAt = null;
+      plan.status = 'planned';
+    }
+  });
   saveData('세션 삭제');
   closeEditModal();
   renderAll();
@@ -1162,6 +1505,15 @@ function bindEvents() {
 
     const editTrigger = event.target.closest('[data-edit-session]');
     if (editTrigger) openEditModal(editTrigger.dataset.editSession);
+
+    const startPlanBtn = event.target.closest('[data-start-plan]');
+    if (startPlanBtn && !startPlanBtn.disabled) startPlanSession(startPlanBtn.dataset.startPlan);
+
+    const fillPlanBtn = event.target.closest('[data-fill-plan]');
+    if (fillPlanBtn && !fillPlanBtn.disabled) fillSessionFromPlan(fillPlanBtn.dataset.fillPlan);
+
+    const deletePlanBtn = event.target.closest('[data-delete-plan]');
+    if (deletePlanBtn) deletePlan(deletePlanBtn.dataset.deletePlan);
 
     const editMoodBtn = event.target.closest('[data-edit-mood]');
     if (editMoodBtn) {
@@ -1205,6 +1557,9 @@ function bindEvents() {
   $('#startPauseBtn').addEventListener('click', () => data.activeSession ? togglePause() : startSession());
   $('#finishSessionBtn').addEventListener('click', finishSession);
   $('#timelineDate').addEventListener('change', renderTimeline);
+  $('#plannerDate')?.addEventListener('change', renderPlanner);
+  $('#savePlannerGoalsBtn')?.addEventListener('click', savePlannerGoals);
+  $('#addPlanBtn')?.addEventListener('click', addPlan);
   $('#reportRange').addEventListener('change', renderReports);
   $('#saveSettingsBtn').addEventListener('click', saveSettings);
   $('#addCategoryBtn').addEventListener('click', addCategory);
