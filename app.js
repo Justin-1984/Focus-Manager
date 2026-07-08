@@ -1146,6 +1146,7 @@ function bindEvents() {
 
     if (event.target.closest('#editSaveBtn')) saveSessionEdit();
     if (event.target.closest('#editCancelBtn')) closeEditModal();
+    if (event.target.closest('#editCloseBtn')) closeEditModal();
     if (event.target.closest('#editDeleteBtn')) deleteSessionRecord();
     if (event.target.id === 'editModal') closeEditModal();
   });

@@ -34,6 +34,7 @@ body {
 }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+[hidden] { display: none !important; }
 
 .app-shell {
   display: grid;
@@ -274,6 +275,9 @@ h3 { margin-bottom: 14px; font-family: var(--font-display); font-size: 19px; fon
 
 #sessionStateText.overtime { color: var(--warning); font-weight: 700; }
 
+
+.modal-overlay[hidden] { display: none !important; }
+
 .modal-overlay {
   position: fixed; inset: 0; z-index: 40;
   background: rgba(6,9,13,.72);
@@ -290,7 +294,21 @@ h3 { margin-bottom: 14px; font-family: var(--font-display); font-size: 19px; fon
   border-radius: var(--radius-lg);
   padding: 26px;
   box-shadow: var(--shadow);
+  -webkit-overflow-scrolling: touch;
 }
+.modal-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.modal-title-row h3 { margin: 0; }
+.icon-button {
+  width: 40px; height: 40px;
+  display: inline-grid; place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,.05);
+  color: var(--muted);
+  font-size: 24px;
+  line-height: 1;
+}
+.icon-button:hover { color: var(--text); background: rgba(255,255,255,.1); }
 .modal-card .text-area { min-height: 110px; }
 .modal-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .modal-card .button-row { margin-top: 20px; }
@@ -375,6 +393,26 @@ h3 { margin-bottom: 14px; font-family: var(--font-display); font-size: 19px; fon
 
 @media (max-width: 640px) {
   .app-shell { padding: max(12px, env(safe-area-inset-top)) 10px calc(84px + env(safe-area-inset-bottom)); }
+  .modal-overlay {
+    align-items: flex-start;
+    padding: calc(12px + env(safe-area-inset-top)) 10px calc(96px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+  .modal-card {
+    width: 100%;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top));
+    padding: 20px;
+    border-radius: 24px;
+  }
+  .modal-meta-grid { grid-template-columns: 1fr; }
+  .modal-card .button-row {
+    position: sticky;
+    bottom: -20px;
+    margin: 18px -20px -20px;
+    padding: 12px 20px 20px;
+    background: linear-gradient(180deg, rgba(28,40,52,0), var(--card-strong) 28%);
+  }
+  .modal-card .button-row button { flex: 1 1 100%; }
   .main-panel { padding: 14px; border-radius: 22px; }
   .topbar { display: grid; gap: 14px; }
   .top-actions { justify-content: flex-start; }

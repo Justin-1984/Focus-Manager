@@ -2,8 +2,8 @@
 
 ## Current baseline
 
-- Current version: v1.2.0
-- Baseline type: GitHub Backup Foundation update on v1.1.2
+- Current version: v1.2.1
+- Baseline type: Modal Hotfix on v1.2.0 GitHub Backup Foundation
 - Storage: localStorage first
 - Storage key: `focus_manager_v1` unchanged
 - Backup: JSON export/import + GitHub manual backup/restore + optional session-end auto backup
@@ -27,6 +27,14 @@
 - Manifest JSON structure validated.
 - DOM id references used by app.js were cross-checked against index.html.
 - Existing storage key and base data shape were preserved.
+
+## v1.2.1 hotfix additions
+
+- Fixed mobile/Safari modal overlay hidden-state bug
+- Added explicit global `[hidden]` and `.modal-overlay[hidden]` rules
+- Added close button to the session edit modal
+- Improved mobile modal scroll and button access
+- Updated service worker cache to `focusmanager-v1-2-1`
 
 ## v1.2.0 additions
 
@@ -73,7 +81,7 @@
 
 ## Next recommended update
 
-v1.2.1 should focus on backup UX stabilization:
+v1.2.2 should focus on backup UX stabilization:
 
 - 백업 성공/실패 메시지 더 명확하게 표시
 - 복원 전 백업 파일 요약 미리보기

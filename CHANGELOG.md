@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.1
+
+- 긴급 수정: iPhone/Safari에서 `hidden` 속성이 `.modal-overlay`의 `display:flex`에 의해 무시되어 세션 수정 모달이 앱 시작 시 항상 보이던 문제 수정
+- 수정: 전역 `[hidden]` 및 `.modal-overlay[hidden]` 숨김 규칙 추가
+- 개선: 세션 수정 모달 상단 닫기 버튼 추가
+- 개선: 모바일 화면에서 수정 모달이 화면 높이를 넘을 때 내부 스크롤과 하단 버튼 접근성이 유지되도록 CSS 보강
+- 유지: GitHub 백업/복원 기능, 저장 키 `focus_manager_v1`, 기존 데이터 구조 유지
+- 갱신: service worker cache version `focusmanager-v1-2-1`로 변경
+
 ## v1.2.0
 
 - 추가: GitHub 백업 설정 UI 추가
