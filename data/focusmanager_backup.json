@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.1",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-09T13:15:09.571Z",
+  "backupAt": "2026-07-09T14:02:16.869Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.1",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-09T11:51:13.820Z",
+        "lastBackupAt": "2026-07-09T13:15:11.107Z",
         "lastRestoreAt": "2026-07-09T02:03:19.839Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -271,6 +271,31 @@
         "mood": "neutral",
         "note": "강의만 완료 다시 볼 부분들 좀 있음",
         "status": "completed"
+      },
+      {
+        "id": "s_1783603124444",
+        "title": "문제풀이",
+        "categoryId": "theory",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "보험금 산정+보험수리 회계+기타",
+        "targetMinutes": 50,
+        "startAt": "2026-07-09T13:18:44.444Z",
+        "endAt": "2026-07-09T14:02:15.265Z",
+        "pauses": [
+          {
+            "start": "2026-07-09T13:26:06.984Z",
+            "end": "2026-07-09T13:28:21.504Z"
+          },
+          {
+            "start": "2026-07-09T13:37:37.990Z",
+            "end": "2026-07-09T13:38:36.288Z"
+          }
+        ],
+        "isPaused": false,
+        "mood": "neutral",
+        "note": "문제풀이 완료 손해사정이론 완료\n\n이해 부분은 85%이상 되지만 몇몇 이론 산식 규정 세부적으로 암기하고 적용가능하게 만들어야 함",
+        "status": "completed"
       }
     ],
     "plans": [
@@ -292,6 +317,6 @@
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-09T13:15:07.258Z"
+    "updatedAt": "2026-07-09T14:02:15.266Z"
   }
 }
