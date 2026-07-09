@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.1",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-09T14:02:16.869Z",
+  "backupAt": "2026-07-09T14:10:38.426Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.1",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-09T13:15:11.107Z",
+        "lastBackupAt": "2026-07-09T14:02:18.446Z",
         "lastRestoreAt": "2026-07-09T02:03:19.839Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -253,6 +253,7 @@
       },
       {
         "id": "s_1783598592380",
+        "linkedPlanId": null,
         "title": "이론 동강",
         "categoryId": "theory",
         "sessionType": "theory",
@@ -274,6 +275,7 @@
       },
       {
         "id": "s_1783603124444",
+        "linkedPlanId": null,
         "title": "문제풀이",
         "categoryId": "theory",
         "sessionType": "theory",
@@ -314,9 +316,25 @@
         "linkedSessionId": null,
         "createdAt": "2026-07-08T14:25:40.084Z",
         "completedAt": null
+      },
+      {
+        "id": "p_1783606213364",
+        "date": "2026-07-10",
+        "title": "이론",
+        "categoryId": "law_insurance",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "15강 이상",
+        "startTime": "09:00",
+        "endTime": "23:00",
+        "targetMinutes": 600,
+        "status": "planned",
+        "linkedSessionId": null,
+        "createdAt": "2026-07-09T14:10:13.364Z",
+        "completedAt": null
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-09T14:02:15.266Z"
+    "updatedAt": "2026-07-09T14:10:13.365Z"
   }
 }
