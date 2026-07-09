@@ -1,6 +1,11 @@
 const STORAGE_KEY = 'focus_manager_v1';
+const STORAGE_MIRROR_KEY = 'focus_manager_v1_mirror';
+const STORAGE_LAST_GOOD_KEY = 'focus_manager_v1_last_good';
+const IDB_NAME = 'focus_manager_persistence';
+const IDB_STORE = 'snapshots';
+const IDB_DATA_KEY = 'latest';
 const DEFAULT_DATA = {
-  version: '1.3.0',
+  version: '1.3.1',
   settings: {
     dailyTargetHours: 6,
     weeklyTargetHours: 40,
@@ -78,6 +83,138 @@ const ROUND_LABELS = {
   final: '최종정리',
 };
 
+function cloneData(value) {
+  if (typeof structuredClone === 'function') return structuredClone(value);
+  return JSON.parse(JSON.stringify(value));
+}
+
+function normalizeSession(session = {}) {
+  return {
+    id: session.id || `s_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    linkedPlanId: session.linkedPlanId || null,
+    title: session.title || '제목 없는 세션',
+    categoryId: session.categoryId || DEFAULT_DATA.categories[0].id,
+    sessionType: normalizeStudyType(session.sessionType),
+    round: normalizeRound(session.round),
+    part: session.part || '',
+    targetMinutes: Number.isFinite(Number(session.targetMinutes)) ? Number(session.targetMinutes) : 25,
+    startAt: session.startAt || new Date().toISOString(),
+    endAt: session.endAt || null,
+    pauses: Array.isArray(session.pauses) ? session.pauses : [],
+    isPaused: !!session.isPaused,
+    mood: session.mood || 'neutral',
+    note: session.note || '',
+    status: session.status || (session.endAt ? 'completed' : 'active'),
+  };
+}
+
+function dataScore(snapshot = {}) {
+  const sessions = Array.isArray(snapshot.sessions) ? snapshot.sessions.length : 0;
+  const plans = Array.isArray(snapshot.plans) ? snapshot.plans.length : 0;
+  const categories = Array.isArray(snapshot.categories) ? snapshot.categories.length : 0;
+  const active = snapshot.activeSession ? 1 : 0;
+  const customGoals = Object.keys(snapshot.settings?.categoryGoals?.daily || {}).length + Object.keys(snapshot.settings?.categoryGoals?.weekly || {}).length;
+  const hasGithub = snapshot.settings?.githubBackup?.owner || snapshot.settings?.githubBackup?.repo || snapshot.settings?.githubBackup?.token;
+  return sessions * 10 + plans * 5 + active * 8 + Math.max(0, categories - DEFAULT_DATA.categories.length) * 2 + customGoals + (hasGithub ? 1 : 0);
+}
+
+function timestampMs(snapshot = {}) {
+  const t = Date.parse(snapshot.updatedAt || snapshot.backupAt || snapshot.createdAt || 0);
+  return Number.isFinite(t) ? t : 0;
+}
+
+function chooseBetterData(a, b) {
+  if (!a) return b;
+  if (!b) return a;
+  const scoreA = dataScore(a);
+  const scoreB = dataScore(b);
+  if (scoreA !== scoreB) return scoreB > scoreA ? b : a;
+  return timestampMs(b) > timestampMs(a) ? b : a;
+}
+
+function safeStorageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.warn(`localStorage read failed: ${key}`, error);
+    return null;
+  }
+}
+
+function safeStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.warn(`localStorage write failed: ${key}`, error);
+    return false;
+  }
+}
+
+function persistSnapshot(snapshot, options = {}) {
+  const safe = normalizeImportedData(snapshot);
+  safe.updatedAt = safe.updatedAt || new Date().toISOString();
+  const serialized = JSON.stringify(safe);
+  const okPrimary = safeStorageSet(STORAGE_KEY, serialized);
+  safeStorageSet(STORAGE_MIRROR_KEY, serialized);
+  if (dataScore(safe) > 0 || options.forceLastGood) safeStorageSet(STORAGE_LAST_GOOD_KEY, serialized);
+  saveToIndexedDB(safe).catch((error) => console.warn('IndexedDB backup failed', error));
+  return okPrimary;
+}
+
+function openPersistenceDb() {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) return reject(new Error('IndexedDB unavailable'));
+    const request = indexedDB.open(IDB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('IndexedDB open failed'));
+  });
+}
+
+async function saveToIndexedDB(snapshot) {
+  const db = await openPersistenceDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(cloneData(snapshot), IDB_DATA_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error('IndexedDB save failed'));
+  });
+  db.close();
+}
+
+async function loadFromIndexedDB() {
+  const db = await openPersistenceDb();
+  const result = await new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const request = tx.objectStore(IDB_STORE).get(IDB_DATA_KEY);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error || new Error('IndexedDB load failed'));
+  });
+  db.close();
+  return result ? normalizeImportedData(result) : null;
+}
+
+async function restoreFromPersistenceBackupIfNeeded() {
+  try {
+    const indexed = await loadFromIndexedDB();
+    if (!indexed) return;
+    const currentScore = dataScore(data);
+    const indexedScore = dataScore(indexed);
+    const shouldRestore = currentScore === 0 && indexedScore > 0;
+    if (!shouldRestore) return;
+    data = indexed;
+    persistSnapshot(data);
+    renderAll();
+    toast('이전 저장 데이터를 자동 복구했습니다.');
+  } catch (error) {
+    console.warn('No IndexedDB restore available', error);
+  }
+}
+
 function mergeSettings(settings = {}) {
   const githubBackup = {
     ...DEFAULT_DATA.settings.githubBackup,
@@ -119,39 +256,66 @@ function normalizePlan(plan = {}) {
 
 function normalizeImportedData(imported) {
   const source = imported?.app === 'FocusManager' && imported.data ? imported.data : imported;
-  if (!source || !Array.isArray(source.sessions) || !Array.isArray(source.categories)) throw new Error('invalid data');
-  return {
-    ...structuredClone(DEFAULT_DATA),
+  if (!source || typeof source !== 'object') throw new Error('invalid data');
+  const categories = Array.isArray(source.categories) && source.categories.length
+    ? source.categories.map((cat) => ({
+      id: cat.id || `cat_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+      name: cat.name || '카테고리',
+      color: cat.color || '#c9a227',
+      phase: cat.phase || '기타',
+    }))
+    : cloneData(DEFAULT_DATA.categories);
+  const normalized = {
+    ...cloneData(DEFAULT_DATA),
     ...source,
     version: DEFAULT_DATA.version,
     settings: mergeSettings(source.settings || {}),
-    categories: source.categories.length ? source.categories : DEFAULT_DATA.categories,
-    sessions: Array.isArray(source.sessions) ? source.sessions : [],
+    categories,
+    sessions: Array.isArray(source.sessions) ? source.sessions.map(normalizeSession) : [],
     plans: Array.isArray(source.plans) ? source.plans.map(normalizePlan) : [],
-    activeSession: source.activeSession || null,
+    activeSession: source.activeSession ? normalizeSession(source.activeSession) : null,
   };
+  normalized.updatedAt = source.updatedAt || imported?.backupAt || normalized.updatedAt || new Date().toISOString();
+  return normalized;
 }
 
 function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return structuredClone(DEFAULT_DATA);
-    return normalizeImportedData(JSON.parse(raw));
-  } catch (error) {
-    console.warn('Failed to load data', error);
-    return structuredClone(DEFAULT_DATA);
+  const candidates = [
+    { key: STORAGE_KEY, raw: safeStorageGet(STORAGE_KEY) },
+    { key: STORAGE_MIRROR_KEY, raw: safeStorageGet(STORAGE_MIRROR_KEY) },
+    { key: STORAGE_LAST_GOOD_KEY, raw: safeStorageGet(STORAGE_LAST_GOOD_KEY) },
+  ];
+  let best = null;
+  let bestKey = '';
+  candidates.forEach(({ key, raw }) => {
+    if (!raw) return;
+    try {
+      const parsed = normalizeImportedData(JSON.parse(raw));
+      const next = chooseBetterData(best, parsed);
+      if (next !== best) bestKey = key;
+      best = next;
+    } catch (error) {
+      console.warn(`Failed to load data from ${key}`, error);
+    }
+  });
+  if (best) {
+    if (bestKey !== STORAGE_KEY) persistSnapshot(best);
+    return best;
   }
+  const fresh = cloneData(DEFAULT_DATA);
+  fresh.updatedAt = new Date().toISOString();
+  return fresh;
 }
 
 function saveData(message = '저장됨') {
   data.updatedAt = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const ok = persistSnapshot(data);
   const status = $('#storageStatus');
-  if (status) status.textContent = `${message} · ${formatClock(new Date())}`;
+  if (status) status.textContent = `${ok ? message : '저장 실패'} · ${formatClock(new Date())}`;
 }
 
 function backupSafeData() {
-  const snapshot = structuredClone(data);
+  const snapshot = cloneData(data);
   snapshot.version = DEFAULT_DATA.version;
   if (snapshot.settings?.githubBackup) {
     snapshot.settings.githubBackup = {
@@ -1096,9 +1260,9 @@ function applySettingsFromForm() {
   const examDateInput = $('#examDateInput')?.value;
   data.settings.examDate = examDateInput || null;
 
-  const currentGithub = data.settings.githubBackup || structuredClone(DEFAULT_DATA.settings.githubBackup);
+  const currentGithub = data.settings.githubBackup || cloneData(DEFAULT_DATA.settings.githubBackup);
   data.settings.githubBackup = {
-    ...structuredClone(DEFAULT_DATA.settings.githubBackup),
+    ...cloneData(DEFAULT_DATA.settings.githubBackup),
     ...currentGithub,
     enabled: !!$('#githubBackupEnabled')?.checked,
     autoOnSessionEnd: !!$('#githubAutoOnSessionEnd')?.checked,
@@ -1361,8 +1525,11 @@ function queueAutoGitHubBackup() {
 
 function resetData() {
   if (!confirm('모든 세션 기록과 설정을 초기화할까요?')) return;
-  data = structuredClone(DEFAULT_DATA);
-  saveData('초기화');
+  data = cloneData(DEFAULT_DATA);
+  data.updatedAt = new Date().toISOString();
+  const ok = persistSnapshot(data, { forceLastGood: true });
+  const status = $('#storageStatus');
+  if (status) status.textContent = `${ok ? '초기화' : '저장 실패'} · ${formatClock(new Date())}`;
   renderAll();
   toast('데이터를 초기화했습니다.');
 }
@@ -1570,6 +1737,12 @@ function bindEvents() {
   $('#clearGithubTokenBtn')?.addEventListener('click', clearGithubToken);
   $('#resetBtn').addEventListener('click', resetData);
 
+  window.addEventListener('pagehide', () => persistSnapshot(data));
+  window.addEventListener('beforeunload', () => persistSnapshot(data));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') persistSnapshot(data);
+  });
+
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredPrompt = event;
@@ -1596,6 +1769,7 @@ function init() {
   startTicker();
   startFloatingClock();
   renderAll();
+  restoreFromPersistenceBackupIfNeeded();
 }
 
 init();

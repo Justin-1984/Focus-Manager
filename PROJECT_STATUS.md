@@ -2,9 +2,9 @@
 
 ## Current baseline
 
-- Current version: v1.3.0
-- Baseline type: Study Planner Foundation on v1.2.2 Sticky Clock
-- Storage: localStorage first
+- Current version: v1.3.1
+- Baseline type: Persistence Hotfix on v1.3.0 Study Planner
+- Storage: localStorage first + mirror/last-good slots + IndexedDB safety copy
 - Storage key: `focus_manager_v1` unchanged
 - Backup: JSON export/import + GitHub manual backup/restore + optional session-end auto backup
 - Deployment target: GitHub Pages PWA
@@ -28,6 +28,17 @@
 - DOM id references used by app.js were cross-checked against index.html.
 - Basic mocked runtime smoke test passed.
 - Existing storage key was preserved.
+- Persistence helper syntax and service worker syntax checks passed.
+
+## v1.3.1 hotfix additions
+
+- Added localStorage mirror slot: `focus_manager_v1_mirror`
+- Added last-known-good slot: `focus_manager_v1_last_good`
+- Added IndexedDB safety copy under `focus_manager_persistence`
+- Added automatic restore from a better safety copy when the primary save is empty or weaker
+- Added pagehide/beforeunload/visibilitychange persistence flush
+- Improved partial/corrupt data normalization to avoid falling back to a blank default too easily
+- Updated service worker cache to `focusmanager-v1-3-1`
 
 ## v1.3.0 additions
 
@@ -110,7 +121,7 @@ activeSession
 
 ## Next recommended update
 
-v1.3.1 should focus on planner UX stabilization:
+v1.3.2 should focus on planner UX stabilization:
 
 - 계획 수정 기능
 - 계획 복사/다음 날로 복제

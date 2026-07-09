@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.1
+
+- 긴급 수정: 앱을 껐다 켠 뒤 데이터가 초기화되는 현상을 방지하기 위한 저장 안정화 패치
+- 추가: `focus_manager_v1_mirror` 보조 저장 슬롯 추가
+- 추가: `focus_manager_v1_last_good` 마지막 정상 데이터 저장 슬롯 추가
+- 추가: IndexedDB 안전 복사본 저장/자동 복구 로직 추가
+- 추가: 앱 종료, 페이지 숨김, 백그라운드 전환 시 추가 저장 처리
+- 개선: 저장 데이터 로딩 시 primary/mirror/last-good 중 더 온전한 데이터를 선택하도록 개선
+- 개선: 손상되거나 일부 필드가 누락된 데이터도 가능한 범위에서 기본값과 병합해 복구
+- 유지: 기존 기본 저장 키 `focus_manager_v1` 유지
+- 유지: v1.3.0 공부 플래너 기능, v1.2.x GitHub 백업, 고정 시계, 모달 핫픽스 유지
+- 갱신: service worker cache version `focusmanager-v1-3-1`로 변경
+
 ## v1.3.0
 
 - 추가: 앱 내부 공부 플래너 화면 추가
