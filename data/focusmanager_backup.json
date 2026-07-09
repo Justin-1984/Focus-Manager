@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.0",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-09T01:24:17.959Z",
+  "backupAt": "2026-07-09T01:55:32.978Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.0",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": null,
+        "lastBackupAt": "2026-07-09T01:24:19.195Z",
         "lastRestoreAt": "2026-07-09T01:22:57.791Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -112,6 +112,22 @@
         "mood": "neutral",
         "note": "보상 책임까지 완료 12강 완료",
         "status": "completed"
+      },
+      {
+        "id": "s_1783560341931",
+        "title": "보상 책임 평가 문제 풀이",
+        "categoryId": "theory",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "파트3 평가문제",
+        "targetMinutes": 0,
+        "startAt": "2026-07-09T01:25:41.931Z",
+        "endAt": "2026-07-09T01:55:31.293Z",
+        "pauses": [],
+        "isPaused": false,
+        "mood": "neutral",
+        "note": "파트3 평가문제 / 찾을 수 있는 이론 다시 보고 정리",
+        "status": "completed"
       }
     ],
     "plans": [
@@ -133,6 +149,6 @@
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-09T01:22:57.791Z"
+    "updatedAt": "2026-07-09T01:55:31.295Z"
   }
 }
