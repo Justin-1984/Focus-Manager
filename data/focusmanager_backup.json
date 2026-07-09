@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.1",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-09T11:51:12.634Z",
+  "backupAt": "2026-07-09T13:15:09.571Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.1",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-09T08:25:27.935Z",
+        "lastBackupAt": "2026-07-09T11:51:13.820Z",
         "lastRestoreAt": "2026-07-09T02:03:19.839Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -236,6 +236,7 @@
       },
       {
         "id": "s_1783593343057",
+        "linkedPlanId": null,
         "title": "이론 동강",
         "categoryId": "theory",
         "sessionType": "theory",
@@ -248,6 +249,27 @@
         "isPaused": false,
         "mood": "neutral",
         "note": "20-22 이론강의",
+        "status": "completed"
+      },
+      {
+        "id": "s_1783598592380",
+        "title": "이론 동강",
+        "categoryId": "theory",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "23-25강",
+        "targetMinutes": 90,
+        "startAt": "2026-07-09T12:03:12.380Z",
+        "endAt": "2026-07-09T13:15:07.258Z",
+        "pauses": [
+          {
+            "start": "2026-07-09T13:11:36.121Z",
+            "end": "2026-07-09T13:12:36.838Z"
+          }
+        ],
+        "isPaused": false,
+        "mood": "neutral",
+        "note": "강의만 완료 다시 볼 부분들 좀 있음",
         "status": "completed"
       }
     ],
@@ -270,6 +292,6 @@
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-09T11:51:11.138Z"
+    "updatedAt": "2026-07-09T13:15:07.258Z"
   }
 }
