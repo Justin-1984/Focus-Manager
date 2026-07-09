@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.1",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-09T02:34:28.658Z",
+  "backupAt": "2026-07-09T05:03:00.609Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.1",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-09T02:26:06.832Z",
+        "lastBackupAt": "2026-07-09T02:34:29.899Z",
         "lastRestoreAt": "2026-07-09T02:03:19.839Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -134,6 +134,7 @@
       },
       {
         "id": "s_1783562657836",
+        "linkedPlanId": null,
         "title": "동강",
         "categoryId": "theory",
         "sessionType": "theory",
@@ -150,6 +151,7 @@
       },
       {
         "id": "s_1783564037754",
+        "linkedPlanId": null,
         "title": "문제풀이",
         "categoryId": "theory",
         "sessionType": "theory",
@@ -158,6 +160,22 @@
         "targetMinutes": 25,
         "startAt": "2026-07-09T02:27:17.754Z",
         "endAt": "2026-07-09T02:34:28.053Z",
+        "pauses": [],
+        "isPaused": false,
+        "mood": "neutral",
+        "note": "",
+        "status": "completed"
+      },
+      {
+        "id": "s_1783571939422",
+        "title": "동강",
+        "categoryId": "theory",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "14강",
+        "targetMinutes": 50,
+        "startAt": "2026-07-09T04:38:59.422Z",
+        "endAt": "2026-07-09T05:02:53.755Z",
         "pauses": [],
         "isPaused": false,
         "mood": "neutral",
@@ -184,6 +202,6 @@
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-09T02:34:28.053Z"
+    "updatedAt": "2026-07-09T05:02:53.756Z"
   }
 }
