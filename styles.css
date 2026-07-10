@@ -575,3 +575,116 @@ h3 { margin-bottom: 14px; font-family: var(--font-display); font-size: 19px; fon
   .plan-head { display: grid; }
   .plan-actions button { flex: 1 1 100%; }
 }
+
+/* v1.3.4 Date Navigation, Monthly Report, Foldable Records */
+.date-nav, .report-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.compact-button {
+  padding: 9px 12px;
+  font-size: 12px;
+  min-height: 40px;
+}
+.month-input { min-width: 142px; }
+.fold-box {
+  border: 1px solid rgba(201, 162, 39, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0;
+  overflow: hidden;
+}
+.fold-box + .fold-box { margin-top: 10px; }
+.fold-box summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(0,0,0,.10);
+}
+.fold-box summary::-webkit-details-marker { display: none; }
+.fold-box summary::after {
+  content: '접기';
+  color: var(--faint);
+  font-weight: 700;
+  font-size: 11px;
+}
+.fold-box:not([open]) summary::after { content: '펼치기'; }
+.fold-box > .plan-list,
+.fold-box > .mini-timeline,
+.fold-box > .session-list,
+.fold-box > .category-report,
+.fold-box > .pattern-report,
+.fold-box > .bar-chart {
+  padding: 12px;
+}
+.timeline-fold { margin-top: 12px; }
+.timeline-fold .timeline-wrapper {
+  margin-top: 0;
+  border-top: 0;
+}
+.timeline-day-summary {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  background: rgba(0,0,0,.10);
+}
+.timeline-day-summary strong { color: var(--text); }
+.timeline-day-summary span { font-size: 12px; }
+.timeline-canvas {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 70px 1fr;
+}
+.compact-summary { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); }
+
+/* v1.3.5 Routine Copy & 8h Streak */
+.planner-copy-card { align-self: start; }
+.planner-copy-actions { display: grid; gap: 12px; }
+.copy-target-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 10px;
+}
+.copy-target-row .field-label { grid-column: 1 / -1; margin-bottom: -4px; }
+.copy-target-row .date-input { width: 100%; }
+
+.highlight-tile {
+  border-color: rgba(201, 162, 39, .38);
+  background: rgba(201, 162, 39, .08);
+}
+.report-fold { min-height: 100%; }
+.report-fold .bar-chart { min-height: 220px; }
+
+@media (max-width: 1060px) {
+  .date-nav, .report-controls { justify-content: flex-start; width: 100%; }
+  .compact-summary { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .date-nav { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .date-nav .date-input { grid-column: 1 / -1; width: 100%; order: -1; }
+  .date-nav .compact-button { width: 100%; padding-left: 8px; padding-right: 8px; }
+  .copy-target-row { grid-template-columns: 1fr; }
+  .report-controls { display: grid; grid-template-columns: 1fr; }
+  .month-input { width: 100%; }
+  .timeline-canvas { grid-template-columns: 54px 1fr; }
+  .timeline-day-summary { display: grid; }
+  .compact-summary { grid-template-columns: 1fr; }
+}
