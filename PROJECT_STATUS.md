@@ -2,8 +2,8 @@
 
 ## Current baseline
 
-- Current version: v1.3.1
-- Baseline type: Persistence Hotfix on v1.3.0 Study Planner
+- Current version: v1.3.2
+- Baseline type: Elapsed Time Indicator on v1.3.1 Persistence Hotfix
 - Storage: localStorage first + mirror/last-good slots + IndexedDB safety copy
 - Storage key: `focus_manager_v1` unchanged
 - Backup: JSON export/import + GitHub manual backup/restore + optional session-end auto backup
@@ -26,9 +26,20 @@
 - Service worker syntax check passed with `node --check sw.js`.
 - Manifest JSON structure validated.
 - DOM id references used by app.js were cross-checked against index.html.
-- Basic mocked runtime smoke test passed.
 - Existing storage key was preserved.
 - Persistence helper syntax and service worker syntax checks passed.
+- Floating clock/session indicator logic was updated without changing stored data shape.
+
+## v1.3.2 additions
+
+- Expanded the fixed top clock badge into an active-session status indicator
+- Added elapsed time display while a session is running
+- Added remaining time display for timed sessions
+- Added overtime display after the target time is exceeded
+- Added expected end time display
+- Added 30-minute milestone state display
+- Added paused-state display in the top badge
+- Updated service worker cache to `focusmanager-v1-3-2`
 
 ## v1.3.1 hotfix additions
 
@@ -80,53 +91,9 @@
 - Round field
   - 미지정 / 1회독 / 2회독 / 3회독 / 4회독 / 5회독+ / 최종정리
 - Part/range field
-- Edit modal support for session type, round, and part/range
-- Study type report
-- Round status report
-- Study metadata badges in recent records and mini timeline
+- Session edit modal metadata support
+- Report cards for study type and round distribution
 
-## Data shape
+## Development rule
 
-Core data remains FocusManager-only.
-
-```text
-settings
-categories
-sessions
-plans
-activeSession
-```
-
-`plans` are internal FocusManager study plans. They are not Apple Calendar or Google Calendar events.
-
-## Do not change casually
-
-- Local data key: `focus_manager_v1`
-- FocusManager-only backup payload
-- GitHub token exclusion from backup payload
-- Session lifecycle: active → paused/resumed → completed
-- Category phase grouping: 1차 / 2차 / 기타
-- Existing JSON backup/restore compatibility
-- PWA deployment assumptions for GitHub Pages
-
-## Known limitations
-
-- No Apple Calendar integration by design in this version
-- No Google Calendar integration
-- No real-time multi-device sync yet
-- No automatic conflict merge yet
-- GitHub restore overwrites current local data after confirmation
-- If multiple devices record independently, the latest restored backup can overwrite another device's local-only changes
-- No native app/site blocking or Mac system control from PWA alone
-
-## Next recommended update
-
-v1.3.2 should focus on planner UX stabilization:
-
-- 계획 수정 기능
-- 계획 복사/다음 날로 복제
-- 오늘 미완료 계획 표시 개선
-- 계획 완료율 주간 요약
-- 모바일 플래너 입력 폼 간격 조정
-
-After that, v1.4 can strengthen exam-study dashboard reporting.
+Use the latest confirmed stable ZIP as baseline, preserve existing working behavior, and make minimal scoped changes only.

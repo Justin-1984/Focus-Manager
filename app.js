@@ -5,7 +5,7 @@ const IDB_NAME = 'focus_manager_persistence';
 const IDB_STORE = 'snapshots';
 const IDB_DATA_KEY = 'latest';
 const DEFAULT_DATA = {
-  version: '1.3.1',
+  version: '1.3.2',
   settings: {
     dailyTargetHours: 6,
     weeklyTargetHours: 40,
@@ -363,12 +363,54 @@ function formatFloatingClock(date = new Date()) {
   return `${time} · ${datePart}`;
 }
 
+function formatBadgeDuration(ms, roundMode = 'floor') {
+  const rawMinutes = ms / 60000;
+  const totalMinutes = Math.max(0, roundMode === 'ceil' ? Math.ceil(rawMinutes) : Math.floor(rawMinutes));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours && minutes) return `${hours}시간 ${minutes}분`;
+  if (hours) return `${hours}시간`;
+  return `${minutes}분`;
+}
+
+function currentMilestoneLabel(elapsedMs) {
+  const elapsedMinutes = Math.floor(elapsedMs / 60000);
+  if (elapsedMinutes < 30) return '진행 중';
+  const milestone = Math.floor(elapsedMinutes / 30) * 30;
+  return `${formatBadgeDuration(milestone * 60000)} 경과`;
+}
+
+function activeSessionClockHtml(session, now) {
+  const nowMs = now.getTime();
+  const elapsedMs = sessionDuration(session, nowMs);
+  const elapsedText = `경과 ${formatBadgeDuration(elapsedMs)}`;
+  const stateText = session.isPaused ? '일시정지' : currentMilestoneLabel(elapsedMs);
+
+  if (!session.targetMinutes) {
+    return `<span class="clock-session-row"><span class="clock-pill primary">${elapsedText}</span><span class="clock-pill">자유 세션</span><span class="clock-pill">${stateText}</span></span>`;
+  }
+
+  const targetMs = session.targetMinutes * 60000;
+  const remainingMs = targetMs - elapsedMs;
+  const pausedMs = totalPausedMs(session, nowMs);
+  const expectedEndAt = new Date(new Date(session.startAt).getTime() + targetMs + pausedMs);
+  const remainingText = remainingMs >= 0
+    ? `남은 ${formatBadgeDuration(remainingMs, 'ceil')}`
+    : `초과 ${formatBadgeDuration(Math.abs(remainingMs))}`;
+  const remainingClass = remainingMs >= 0 ? '' : ' overtime';
+
+  return `<span class="clock-session-row"><span class="clock-pill primary">${elapsedText}</span><span class="clock-pill${remainingClass}">${remainingText}</span><span class="clock-pill">종료 ${formatClock(expectedEndAt)}</span><span class="clock-pill">${stateText}</span></span>`;
+}
+
 function updateFloatingClock() {
   const clock = $('#floatingClock');
   if (!clock) return;
   const now = new Date();
-  clock.textContent = formatFloatingClock(now);
+  const session = data.activeSession;
+  clock.classList.toggle('session-active', !!session);
+  clock.innerHTML = `<span class="clock-main">${formatFloatingClock(now)}</span>${session ? activeSessionClockHtml(session, now) : ''}`;
   clock.dateTime = now.toISOString();
+  clock.setAttribute('aria-label', session ? `현재 시간 ${formatFloatingClock(now)}, 세션 ${clock.textContent}` : `현재 시간 ${formatFloatingClock(now)}`);
 }
 
 function startFloatingClock() {
@@ -492,6 +534,7 @@ function startTicker() {
       checkTargetReached();
       renderActiveSession();
       renderDashboard(false);
+      updateFloatingClock();
     }
   }, 1000);
 }
