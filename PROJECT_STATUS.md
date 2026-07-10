@@ -2,8 +2,8 @@
 
 ## Current baseline
 
-- Current version: v1.3.2
-- Baseline type: Elapsed Time Indicator on v1.3.1 Persistence Hotfix
+- Current version: v1.3.3
+- Baseline type: Quick Update & Goal Clock on v1.3.2 Elapsed Time Indicator
 - Storage: localStorage first + mirror/last-good slots + IndexedDB safety copy
 - Storage key: `focus_manager_v1` unchanged
 - Backup: JSON export/import + GitHub manual backup/restore + optional session-end auto backup
@@ -29,6 +29,16 @@
 - Existing storage key was preserved.
 - Persistence helper syntax and service worker syntax checks passed.
 - Floating clock/session indicator logic was updated without changing stored data shape.
+- Force update button clears only FocusManager cache and reloads without deleting user data.
+
+## v1.3.3 additions
+
+- Added `세션 저장` button inside the fixed top active-session indicator
+- Added daily goal remaining/completed status inside the fixed top active-session indicator
+- Added `앱 강제 업데이트` button in Settings
+- Force update keeps localStorage/IndexedDB data and clears only FocusManager cache before reloading
+- Removed duplicated study metadata line from active session summary
+- Updated service worker cache to `focusmanager-v1-3-3`
 
 ## v1.3.2 additions
 

@@ -16,14 +16,14 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <time id="floatingClock" class="floating-clock" datetime="" aria-label="현재 시간"><span class="clock-main">--:--</span></time>
+  <div id="floatingClock" class="floating-clock" aria-label="현재 시간"><time class="clock-main" id="floatingClockTime" datetime="">--:--</time></div>
   <div id="app" class="app-shell">
     <aside class="sidebar" aria-label="앱 메뉴">
       <div class="brand">
         <div class="brand-mark">F</div>
         <div>
           <strong>FocusManager</strong>
-          <span>v1.3.2 · 경과시간 표시</span>
+          <span>v1.3.3 · 상단 조작/목표 표시</span>
         </div>
       </div>
       <nav class="nav-list">
@@ -320,7 +320,11 @@
             <input id="examDateInput" class="text-input" type="date" />
             <label class="toggle-line"><input id="soundToggle" type="checkbox" /> 세션 종료 알림음 사용</label>
             <label class="toggle-line"><input id="autoReflectionToggle" type="checkbox" /> 종료 시 회고 입력 유도</label>
-            <button class="primary-button" id="saveSettingsBtn">설정 저장</button>
+            <div class="button-row settings-action-row">
+              <button class="primary-button" id="saveSettingsBtn">설정 저장</button>
+              <button class="ghost-button" id="forceUpdateBtn" type="button">앱 강제 업데이트</button>
+            </div>
+            <p class="muted mini-help">화면이 예전 버전으로 보일 때만 사용하세요. 데이터는 지우지 않고 캐시만 새로고침합니다.</p>
           </section>
 
           <section class="panel-card">

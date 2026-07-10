@@ -64,6 +64,7 @@ button { cursor: pointer; }
   user-select: none;
 }
 .floating-clock.session-active {
+  pointer-events: auto;
   align-items: flex-start;
   justify-content: flex-start;
   flex-direction: column;
@@ -99,6 +100,39 @@ button { cursor: pointer; }
   background: rgba(217, 140, 43, 0.14);
   color: #ffd8a8;
 }
+.clock-pill.goal {
+  border-color: rgba(47, 143, 111, 0.36);
+  background: rgba(47, 143, 111, 0.14);
+  color: #c9f3de;
+}
+.clock-pill.goal.complete {
+  border-color: rgba(201, 162, 39, 0.40);
+  background: rgba(201, 162, 39, 0.16);
+  color: #f7e6aa;
+}
+.clock-action-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.clock-action-button {
+  min-height: 24px;
+  padding: 5px 9px;
+  border: 1px solid rgba(201, 162, 39, 0.38);
+  border-radius: 999px;
+  background: rgba(201, 162, 39, 0.18);
+  color: #f7e6aa;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+  pointer-events: auto;
+}
+.clock-action-button:active { transform: translateY(1px); }
+.mini-help { margin: 8px 0 0; font-size: 12px; }
+.settings-action-row { margin-top: 12px; }
 
 .app-shell {
   display: grid;
@@ -461,6 +495,7 @@ h3 { margin-bottom: 14px; font-family: var(--font-display); font-size: 19px; fon
   .floating-clock { min-height: 26px; padding: 6px 10px; font-size: 11px; }
   .floating-clock.session-active { gap: 5px; padding: 7px 9px; border-radius: 14px; }
   .clock-pill { min-height: 18px; padding: 3px 6px; font-size: 10px; }
+  .clock-action-button { min-height: 22px; padding: 4px 7px; font-size: 10px; }
   .app-shell { padding: max(12px, env(safe-area-inset-top)) 10px calc(84px + env(safe-area-inset-bottom)); }
   .modal-overlay {
     align-items: flex-start;

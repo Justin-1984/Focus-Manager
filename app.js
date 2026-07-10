@@ -5,7 +5,7 @@ const IDB_NAME = 'focus_manager_persistence';
 const IDB_STORE = 'snapshots';
 const IDB_DATA_KEY = 'latest';
 const DEFAULT_DATA = {
-  version: '1.3.2',
+  version: '1.3.3',
   settings: {
     dailyTargetHours: 6,
     weeklyTargetHours: 40,
@@ -380,14 +380,34 @@ function currentMilestoneLabel(elapsedMs) {
   return `${formatBadgeDuration(milestone * 60000)} 경과`;
 }
 
+function dailyGoalClockHtml() {
+  const targetHours = Number(data.settings?.dailyTargetHours || 0);
+  if (!targetHours) return '';
+  const targetMs = targetHours * 3600000;
+  const actualMs = actualMsForDate(todayKey());
+  const remainingMs = targetMs - actualMs;
+  const pct = targetMs ? Math.round((actualMs / targetMs) * 100) : 0;
+  if (remainingMs > 0) {
+    return `<span class="clock-pill goal">오늘 남음 ${formatBadgeDuration(remainingMs, 'ceil')}</span>`;
+  }
+  const overText = actualMs > targetMs ? ` · 초과 ${formatBadgeDuration(actualMs - targetMs)}` : '';
+  return `<span class="clock-pill goal complete">오늘 ${pct}% 완료${overText}</span>`;
+}
+
+function floatingClockActionHtml() {
+  return `<span class="clock-action-row"><button class="clock-action-button" id="floatingFinishBtn" type="button" aria-label="현재 세션 종료 및 저장">세션 저장</button></span>`;
+}
+
 function activeSessionClockHtml(session, now) {
   const nowMs = now.getTime();
   const elapsedMs = sessionDuration(session, nowMs);
   const elapsedText = `경과 ${formatBadgeDuration(elapsedMs)}`;
   const stateText = session.isPaused ? '일시정지' : currentMilestoneLabel(elapsedMs);
+  const goalText = dailyGoalClockHtml();
+  const action = floatingClockActionHtml();
 
   if (!session.targetMinutes) {
-    return `<span class="clock-session-row"><span class="clock-pill primary">${elapsedText}</span><span class="clock-pill">자유 세션</span><span class="clock-pill">${stateText}</span></span>`;
+    return `<span class="clock-session-row"><span class="clock-pill primary">${elapsedText}</span><span class="clock-pill">자유 세션</span><span class="clock-pill">${stateText}</span>${goalText}</span>${action}`;
   }
 
   const targetMs = session.targetMinutes * 60000;
@@ -399,7 +419,7 @@ function activeSessionClockHtml(session, now) {
     : `초과 ${formatBadgeDuration(Math.abs(remainingMs))}`;
   const remainingClass = remainingMs >= 0 ? '' : ' overtime';
 
-  return `<span class="clock-session-row"><span class="clock-pill primary">${elapsedText}</span><span class="clock-pill${remainingClass}">${remainingText}</span><span class="clock-pill">종료 ${formatClock(expectedEndAt)}</span><span class="clock-pill">${stateText}</span></span>`;
+  return `<span class="clock-session-row"><span class="clock-pill primary">${elapsedText}</span><span class="clock-pill${remainingClass}">${remainingText}</span><span class="clock-pill">종료 ${formatClock(expectedEndAt)}</span><span class="clock-pill">${stateText}</span>${goalText}</span>${action}`;
 }
 
 function updateFloatingClock() {
@@ -407,10 +427,10 @@ function updateFloatingClock() {
   if (!clock) return;
   const now = new Date();
   const session = data.activeSession;
+  const clockText = formatFloatingClock(now);
   clock.classList.toggle('session-active', !!session);
-  clock.innerHTML = `<span class="clock-main">${formatFloatingClock(now)}</span>${session ? activeSessionClockHtml(session, now) : ''}`;
-  clock.dateTime = now.toISOString();
-  clock.setAttribute('aria-label', session ? `현재 시간 ${formatFloatingClock(now)}, 세션 ${clock.textContent}` : `현재 시간 ${formatFloatingClock(now)}`);
+  clock.innerHTML = `<time class="clock-main" id="floatingClockTime" datetime="${now.toISOString()}">${clockText}</time>${session ? activeSessionClockHtml(session, now) : ''}`;
+  clock.setAttribute('aria-label', session ? `현재 시간 ${clockText}, 세션 ${clock.textContent}` : `현재 시간 ${clockText}`);
 }
 
 function startFloatingClock() {
@@ -578,6 +598,7 @@ function renderAll(showToast = false) {
   renderReports();
   renderSettings();
   renderSuggestions();
+  updateFloatingClock();
   if (showToast) toast('화면을 업데이트했습니다.');
 }
 
@@ -1293,6 +1314,28 @@ function playDing() {
   }
 }
 
+async function forceAppUpdate() {
+  persistSnapshot(data);
+  toast('앱 캐시를 새로고침합니다.');
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((key) => key.startsWith('focusmanager-')).map((key) => caches.delete(key)));
+    }
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.update().catch(() => null)));
+    }
+  } catch (error) {
+    console.warn('Force update failed', error);
+  } finally {
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', '1.3.3');
+    url.searchParams.set('refresh', String(Date.now()));
+    window.location.replace(url.toString());
+  }
+}
+
 function applySettingsFromForm() {
   const target = Number($('#targetHours').value);
   data.settings.dailyTargetHours = Number.isFinite(target) ? Math.max(0.5, Math.min(16, target)) : 6;
@@ -1731,6 +1774,13 @@ function bindEvents() {
       editMoodBtn.classList.add('active');
     }
 
+    if (event.target.closest('#floatingFinishBtn')) {
+      event.preventDefault();
+      event.stopPropagation();
+      finishSession();
+      return;
+    }
+
     if (event.target.closest('#editSaveBtn')) saveSessionEdit();
     if (event.target.closest('#editCancelBtn')) closeEditModal();
     if (event.target.closest('#editCloseBtn')) closeEditModal();
@@ -1772,6 +1822,7 @@ function bindEvents() {
   $('#addPlanBtn')?.addEventListener('click', addPlan);
   $('#reportRange').addEventListener('change', renderReports);
   $('#saveSettingsBtn').addEventListener('click', saveSettings);
+  $('#forceUpdateBtn')?.addEventListener('click', forceAppUpdate);
   $('#addCategoryBtn').addEventListener('click', addCategory);
   $('#exportBtn').addEventListener('click', exportBackup);
   $('#importFile').addEventListener('change', (event) => importBackup(event.target.files[0]));
