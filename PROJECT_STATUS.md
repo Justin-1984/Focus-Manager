@@ -1,109 +1,40 @@
-# FocusManager Project Status
+# PROJECT_STATUS
 
-## Current baseline
+## Current Version
 
-- Current version: v1.3.3
-- Baseline type: Quick Update & Goal Clock on v1.3.2 Elapsed Time Indicator
-- Storage: localStorage first + mirror/last-good slots + IndexedDB safety copy
-- Storage key: `focus_manager_v1` unchanged
-- Backup: JSON export/import + GitHub manual backup/restore + optional session-end auto backup
-- Deployment target: GitHub Pages PWA
-- Supported screens: iPhone, iPad, PC browser
+- Current version: v1.3.5 Routine Copy & 8h Streak
+- Previous baseline: v1.3.4 Navigation, Monthly Report & Fold
+- Storage key: `focus_manager_v1`
+- Service worker cache: `focusmanager-v1-3-5`
 
-## Verified in this package
+## Current Stable Candidate
 
-- Required core files included
-  - index.html
-  - styles.css
-  - app.js
-  - manifest.webmanifest
-  - sw.js
-  - icons
-  - README.md
-  - CHANGELOG.md
-  - PROJECT_STATUS.md
-- JavaScript syntax check passed with `node --check app.js`.
-- Service worker syntax check passed with `node --check sw.js`.
-- Manifest JSON structure validated.
-- DOM id references used by app.js were cross-checked against index.html.
-- Existing storage key was preserved.
-- Persistence helper syntax and service worker syntax checks passed.
-- Floating clock/session indicator logic was updated without changing stored data shape.
-- Force update button clears only FocusManager cache and reloads without deleting user data.
+`FocusManager_PWA_v1_3_5_routine_copy_8h_streak.zip`
 
-## v1.3.3 additions
+## v1.3.5 Summary
 
-- Added `세션 저장` button inside the fixed top active-session indicator
-- Added daily goal remaining/completed status inside the fixed top active-session indicator
-- Added `앱 강제 업데이트` button in Settings
-- Force update keeps localStorage/IndexedDB data and clears only FocusManager cache before reloading
-- Removed duplicated study metadata line from active session summary
-- Updated service worker cache to `focusmanager-v1-3-3`
+이번 버전은 공부 플래너의 반복 입력 부담을 줄이고, 월별 리포트에서 8시간 이상 공부한 날의 연속성을 확인할 수 있게 만든 소규모 기능 강화 버전입니다.
 
-## v1.3.2 additions
+## Added
 
-- Expanded the fixed top clock badge into an active-session status indicator
-- Added elapsed time display while a session is running
-- Added remaining time display for timed sessions
-- Added overtime display after the target time is exceeded
-- Added expected end time display
-- Added 30-minute milestone state display
-- Added paused-state display in the top badge
-- Updated service worker cache to `focusmanager-v1-3-2`
+- 전날 계획을 선택 날짜로 복사
+- 선택 날짜 계획을 사용자가 고른 대상 날짜로 복사
+- 복사된 계획은 새 대기 계획으로 생성
+- 8시간 이상 공부한 날의 월별 최장 연속 기록
+- 8시간 이상 공부한 날의 현재/월말 기준 연속 기록
 
-## v1.3.1 hotfix additions
+## Verification
 
-- Added localStorage mirror slot: `focus_manager_v1_mirror`
-- Added last-known-good slot: `focus_manager_v1_last_good`
-- Added IndexedDB safety copy under `focus_manager_persistence`
-- Added automatic restore from a better safety copy when the primary save is empty or weaker
-- Added pagehide/beforeunload/visibilitychange persistence flush
-- Improved partial/corrupt data normalization to avoid falling back to a blank default too easily
-- Updated service worker cache to `focusmanager-v1-3-1`
+- `app.js` JavaScript syntax check passed
+- `sw.js` JavaScript syntax check passed
+- `manifest.webmanifest` JSON check passed
+- ZIP integrity check passed
+- Existing storage key preserved
+- GitHub backup token exclusion policy preserved
 
-## v1.3.0 additions
+## Next Candidate Ideas
 
-- Added Planner navigation item
-- Added internal study planner screen
-- Added daily total goal setting
-- Added weekly goal setting
-- Added category-level daily and weekly goals
-- Added date-based study plan creation
-- Added planned session list by selected date
-- Added direct session start from a planned item
-- Added “load plan into session form” action
-- Added planned session completion linkage to actual session record
-- Added plan deletion
-- Added dashboard “오늘 계획” card
-- Added dashboard “목표 달성률” card
-- Added plan-vs-actual achievement display
-- Added `plans` to backup payload
-- Added `weeklyTargetHours` and `categoryGoals` to settings
-- Updated service worker cache to `focusmanager-v1-3-0`
-
-## Retained from v1.2.x
-
-- Fixed top current-time badge
-- GitHub backup settings
-- GitHub manual backup
-- GitHub restore
-- Optional session-end automatic GitHub backup
-- GitHub token exclusion from backup payload
-- JSON backup/restore
-- Mobile modal hidden-state hotfix
-- Session edit modal
-
-## Retained from v1.1.x
-
-- 손해사정사 과목 카테고리
-- Session type field
-  - 이론 / 기출 / 암기 / 오답 / 답안작성 / 복습 / 기타
-- Round field
-  - 미지정 / 1회독 / 2회독 / 3회독 / 4회독 / 5회독+ / 최종정리
-- Part/range field
-- Session edit modal metadata support
-- Report cards for study type and round distribution
-
-## Development rule
-
-Use the latest confirmed stable ZIP as baseline, preserve existing working behavior, and make minimal scoped changes only.
+- 계획 템플릿 저장
+- 주간 루틴 일괄 생성
+- 계획 순서 직접 변경
+- 월별 8시간 달성 캘린더 표시

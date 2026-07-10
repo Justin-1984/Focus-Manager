@@ -23,7 +23,7 @@
         <div class="brand-mark">F</div>
         <div>
           <strong>FocusManager</strong>
-          <span>v1.3.3 · 상단 조작/목표 표시</span>
+          <span>v1.3.5 · 계획 복사/8h 연속</span>
         </div>
       </div>
       <nav class="nav-list">
@@ -90,7 +90,10 @@
         <div class="two-column dashboard-planning">
           <section class="panel-card">
             <div class="panel-head"><h3>오늘 계획</h3><button class="link-button" data-jump="planner">계획 보기</button></div>
-            <div id="dashboardPlanList" class="plan-list compact-plan-list"></div>
+            <details class="fold-box dashboard-fold" open>
+              <summary>오늘 계획 접기 / 펼치기</summary>
+              <div id="dashboardPlanList" class="plan-list compact-plan-list"></div>
+            </details>
           </section>
           <section class="panel-card">
             <div class="panel-head"><h3>목표 달성률</h3><button class="link-button" data-jump="planner">목표 설정</button></div>
@@ -101,11 +104,17 @@
         <div class="two-column">
           <section class="panel-card">
             <div class="panel-head"><h3>오늘 타임라인</h3><button class="link-button" data-jump="timeline">전체 보기</button></div>
-            <div id="miniTimeline" class="mini-timeline"></div>
+            <details class="fold-box dashboard-fold" open>
+              <summary>오늘 타임라인 접기 / 펼치기</summary>
+              <div id="miniTimeline" class="mini-timeline"></div>
+            </details>
           </section>
           <section class="panel-card">
             <div class="panel-head"><h3>최근 기록</h3><button class="link-button" data-jump="reports">분석 보기</button></div>
-            <div id="recentSessions" class="session-list empty-list">아직 기록이 없습니다.</div>
+            <details class="fold-box dashboard-fold" open>
+              <summary>최근 기록 접기 / 펼치기</summary>
+              <div id="recentSessions" class="session-list empty-list">아직 기록이 없습니다.</div>
+            </details>
           </section>
         </div>
       </section>
@@ -195,9 +204,17 @@
         <div class="panel-card">
           <div class="panel-head wrap-head">
             <div><p class="eyebrow">Daily Timeline</p><h2>오늘의 시간 사용</h2></div>
-            <input type="date" id="timelineDate" class="date-input" />
+            <div class="date-nav">
+              <button class="ghost-button compact-button" data-date-nav="timelineDate" data-date-shift="-1" type="button">← 전날</button>
+              <input type="date" id="timelineDate" class="date-input" />
+              <button class="ghost-button compact-button" data-date-nav="timelineDate" data-date-shift="1" type="button">다음날 →</button>
+              <button class="ghost-button compact-button" data-date-nav="timelineDate" data-date-today="1" type="button">오늘</button>
+            </div>
           </div>
-          <div class="timeline-wrapper" id="timelineWrapper"></div>
+          <details class="fold-box timeline-fold" open>
+            <summary>선택 날짜 타임라인 접기 / 펼치기</summary>
+            <div class="timeline-wrapper" id="timelineWrapper"></div>
+          </details>
         </div>
       </section>
 
@@ -210,9 +227,30 @@
                 <h2>목표와 공부 계획</h2>
                 <p class="muted">앱 내부 플래너입니다. Apple Calendar 연동 없이 날짜별 계획과 실제 집중 기록을 비교합니다.</p>
               </div>
-              <input type="date" id="plannerDate" class="date-input" />
+              <div class="date-nav">
+                <button class="ghost-button compact-button" data-date-nav="plannerDate" data-date-shift="-1" type="button">← 전날</button>
+                <input type="date" id="plannerDate" class="date-input" />
+                <button class="ghost-button compact-button" data-date-nav="plannerDate" data-date-shift="1" type="button">다음날 →</button>
+                <button class="ghost-button compact-button" data-date-nav="plannerDate" data-date-today="1" type="button">오늘</button>
+              </div>
             </div>
             <div id="plannerSummary" class="planner-summary"></div>
+          </section>
+
+          <section class="panel-card planner-copy-card">
+            <div class="panel-head">
+              <h3>계획 복사</h3>
+              <span class="muted mini-help">반복 루틴 빠른 입력</span>
+            </div>
+            <div class="planner-copy-actions">
+              <button class="ghost-button" id="copyPrevPlansBtn" type="button">전날 계획 가져오기</button>
+              <div class="copy-target-row">
+                <label class="field-label" for="copyTargetDate">대상 날짜</label>
+                <input id="copyTargetDate" class="date-input" type="date" />
+                <button class="primary-button" id="copyPlansToDateBtn" type="button">선택 날짜 계획 복사</button>
+              </div>
+            </div>
+            <p class="muted mini-help">선택한 날짜의 계획을 다른 날짜로 복사합니다. 완료 기록은 복사하지 않고 대기 계획으로만 추가합니다.</p>
           </section>
 
           <section class="panel-card">
@@ -273,7 +311,10 @@
               <h3>선택 날짜 계획</h3>
               <button class="link-button" data-jump="session">직접 세션 시작</button>
             </div>
-            <div id="planList" class="plan-list"></div>
+            <details class="fold-box" open>
+              <summary>선택 날짜 계획 접기 / 펼치기</summary>
+              <div id="planList" class="plan-list"></div>
+            </details>
           </section>
         </div>
       </section>
@@ -283,29 +324,50 @@
           <section class="panel-card wide-report">
             <div class="panel-head wrap-head">
               <div><p class="eyebrow">Analyze your data</p><h2>집중 리포트</h2></div>
-              <select id="reportRange" class="text-input small-select">
-                <option value="7">최근 7일</option>
-                <option value="14">최근 14일</option>
-                <option value="30">최근 30일</option>
-              </select>
+              <div class="report-controls">
+                <select id="reportRange" class="text-input small-select">
+                  <option value="7">최근 7일</option>
+                  <option value="14">최근 14일</option>
+                  <option value="30">최근 30일</option>
+                </select>
+                <input id="reportMonth" class="text-input month-input" type="month" />
+              </div>
             </div>
-            <div class="bar-chart" id="dailyChart"></div>
+            <details class="fold-box report-fold" open>
+              <summary>기간별 그래프 접기 / 펼치기</summary>
+              <div class="bar-chart" id="dailyChart"></div>
+            </details>
+          </section>
+          <section class="panel-card wide-report">
+            <div class="panel-head">
+              <h3>월별 리포트</h3>
+              <span class="muted mini-help">선택한 월 기준</span>
+            </div>
+            <div id="monthlyReport" class="planner-summary compact-summary"></div>
           </section>
           <section class="panel-card">
-            <h3>카테고리 분포</h3>
-            <div id="categoryReport" class="category-report"></div>
+            <details class="fold-box report-fold" open>
+              <summary>카테고리 분포 접기 / 펼치기</summary>
+              <div id="categoryReport" class="category-report"></div>
+            </details>
           </section>
           <section class="panel-card">
-            <h3>패턴 요약</h3>
-            <div id="patternReport" class="pattern-report"></div>
+            <details class="fold-box report-fold" open>
+              <summary>패턴 요약 접기 / 펼치기</summary>
+              <div id="patternReport" class="pattern-report"></div>
+            </details>
           </section>
           <section class="panel-card">
-            <h3>공부 방식 분포</h3>
-            <div id="studyTypeReport" class="category-report"></div>
+            <details class="fold-box report-fold" open>
+              <summary>공부 방식 분포 접기 / 펼치기</summary>
+              <div id="studyTypeReport" class="category-report"></div>
+            </details>
           </section>
           <section class="panel-card">
-            <h3>회독 현황</h3>
-            <div id="roundReport" class="pattern-report"></div>
+            <details class="fold-box report-fold" open>
+              <summary>회독 현황 접기 / 펼치기</summary>
+              <div id="roundReport" class="pattern-report"></div>
+            </details>
           </section>
         </div>
       </section>

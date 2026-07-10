@@ -5,7 +5,7 @@ const IDB_NAME = 'focus_manager_persistence';
 const IDB_STORE = 'snapshots';
 const IDB_DATA_KEY = 'latest';
 const DEFAULT_DATA = {
-  version: '1.3.3',
+  version: '1.3.5',
   settings: {
     dailyTargetHours: 6,
     weeklyTargetHours: 40,
@@ -345,6 +345,27 @@ function todayKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
+function monthKey(date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+function dateFromKey(dateStr) {
+  return new Date(`${dateStr}T00:00:00`);
+}
+
+function shiftDateKey(dateStr, days) {
+  const date = dateFromKey(dateStr || todayKey());
+  date.setDate(date.getDate() + days);
+  return todayKey(date);
+}
+
+function dateNavLabel(dateStr) {
+  const date = dateFromKey(dateStr || todayKey());
+  return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' }).format(date);
+}
+
 function dateLabel(date = new Date()) {
   return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }).format(date);
 }
@@ -516,6 +537,20 @@ function weekKeysFor(dateStr = todayKey()) {
   });
 }
 
+function monthDayKeys(monthStr = monthKey()) {
+  const [yearRaw, monthRaw] = String(monthStr || monthKey()).split('-');
+  const year = Number(yearRaw);
+  const monthIndex = Number(monthRaw) - 1;
+  const first = new Date(year, monthIndex, 1);
+  const keys = [];
+  const cursor = new Date(first);
+  while (cursor.getMonth() === monthIndex) {
+    keys.push(todayKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return keys;
+}
+
 function actualMsForDate(dateStr, categoryId = null) {
   let total = sessionsForDate(dateStr)
     .filter((session) => !categoryId || session.categoryId === categoryId)
@@ -534,6 +569,34 @@ function plannedMsForDate(dateStr, categoryId = null) {
   return plansForDate(dateStr)
     .filter((plan) => !categoryId || plan.categoryId === categoryId)
     .reduce((sum, plan) => sum + planDurationMinutes(plan) * 60000, 0);
+}
+
+function isEightHourDay(dateStr) {
+  return actualMsForDate(dateStr) >= 8 * 3600000;
+}
+
+function longestEightHourStreak(dayKeys = []) {
+  let best = 0;
+  let current = 0;
+  dayKeys.forEach((key) => {
+    if (isEightHourDay(key)) {
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 0;
+    }
+  });
+  return best;
+}
+
+function eightHourStreakEndingAt(dateStr = todayKey(), minDateStr = null) {
+  let streak = 0;
+  let cursor = dateStr;
+  while ((!minDateStr || cursor >= minDateStr) && isEightHourDay(cursor)) {
+    streak += 1;
+    cursor = shiftDateKey(cursor, -1);
+  }
+  return streak;
 }
 
 function linkedSessionForPlan(plan) {
@@ -809,10 +872,17 @@ function renderTimeline() {
   const totalHours = endHour - startHour;
   const labels = Array.from({ length: totalHours + 1 }, (_, i) => startHour + i);
   const blocks = sessions.map((session) => timelineBlock(session, startHour, rowHeight, totalHours)).join('');
+  const totalMs = sessions.reduce((sum, session) => sum + sessionDuration(session), 0);
 
   $('#timelineWrapper').innerHTML = `
-    <div class="time-labels">${labels.map((hour) => `<div>${String(hour).padStart(2, '0')}:00</div>`).join('')}</div>
-    <div class="timeline-lane">${blocks || '<p class="muted" style="padding:18px">해당 날짜의 세션 기록이 없습니다.</p>'}</div>`;
+    <div class="timeline-day-summary">
+      <strong>${escapeHtml(dateNavLabel(dateStr))}</strong>
+      <span>${sessions.length}개 세션 · ${formatDuration(totalMs)}</span>
+    </div>
+    <div class="timeline-canvas">
+      <div class="time-labels">${labels.map((hour) => `<div>${String(hour).padStart(2, '0')}:00</div>`).join('')}</div>
+      <div class="timeline-lane">${blocks || '<p class="muted" style="padding:18px">해당 날짜의 세션 기록이 없습니다.</p>'}</div>
+    </div>`;
 }
 
 function timelineBlock(session, startHour, rowHeight, totalHours) {
@@ -839,6 +909,11 @@ function renderPlanner() {
   if (!dateInput) return;
   if (!dateInput.value) dateInput.value = todayKey();
   const dateStr = dateInput.value;
+  const copyTargetInput = $('#copyTargetDate');
+  if (copyTargetInput && (!copyTargetInput.value || copyTargetInput.dataset.lastPlannerDate !== dateStr)) {
+    copyTargetInput.value = shiftDateKey(dateStr, 1);
+    copyTargetInput.dataset.lastPlannerDate = dateStr;
+  }
   const dailyInput = $('#dailyGoalInput');
   const weeklyInput = $('#weeklyGoalInput');
   if (dailyInput) dailyInput.value = data.settings.dailyTargetHours || 6;
@@ -860,7 +935,7 @@ function renderPlannerSummary(dateStr) {
   const planCount = plansForDate(dateStr).length;
   const doneCount = plansForDate(dateStr).filter((plan) => planComputedStatus(plan) === 'completed').length;
   el.innerHTML = `
-    <div class="summary-tile"><span>선택 날짜 실제</span><strong>${formatDuration(actualMs)}</strong><small>목표 ${formatDuration(dailyTargetMs)}</small></div>
+    <div class="summary-tile"><span>${escapeHtml(dateNavLabel(dateStr))}</span><strong>${formatDuration(actualMs)}</strong><small>목표 ${formatDuration(dailyTargetMs)}</small></div>
     <div class="summary-tile"><span>계획 대비</span><strong>${plannedMs ? Math.round((actualMs / plannedMs) * 100) : 0}%</strong><small>${formatDuration(plannedMs)} 계획</small></div>
     <div class="summary-tile"><span>계획 완료</span><strong>${doneCount}/${planCount}</strong><small>예정 세션 기준</small></div>
     <div class="summary-tile"><span>이번 주 실제</span><strong>${formatDuration(weekActualMs)}</strong><small>목표 ${formatDuration(weeklyTargetMs)}</small></div>
@@ -1006,6 +1081,46 @@ function startPlanSession(planId) {
   toast('계획 세션을 시작했습니다.');
 }
 
+function clonePlanToDate(plan, targetDate) {
+  return normalizePlan({
+    ...plan,
+    id: null,
+    date: targetDate,
+    status: 'planned',
+    linkedSessionId: null,
+    completedAt: null,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+function copyPlansBetweenDates(sourceDate, targetDate, label = '계획 복사') {
+  const sourcePlans = plansForDate(sourceDate);
+  if (!sourcePlans.length) return toast(`${dateNavLabel(sourceDate)}에 복사할 계획이 없습니다.`);
+  if (!targetDate) return toast('복사할 대상 날짜를 선택하세요.');
+  if (sourceDate === targetDate) return toast('같은 날짜로는 복사할 수 없습니다.');
+  const existingCount = plansForDate(targetDate).length;
+  if (existingCount && !confirm(`${dateNavLabel(targetDate)}에 이미 ${existingCount}개의 계획이 있습니다. 기존 계획 뒤에 추가할까요?`)) return;
+  const copied = sourcePlans.map((plan) => clonePlanToDate(plan, targetDate));
+  data.plans = Array.isArray(data.plans) ? data.plans : [];
+  data.plans.push(...copied);
+  saveData(label);
+  const plannerDate = $('#plannerDate');
+  if (plannerDate) plannerDate.value = targetDate;
+  renderAll();
+  toast(`${copied.length}개 계획을 ${dateNavLabel(targetDate)}로 복사했습니다.`);
+}
+
+function copyPreviousDayPlansToSelectedDate() {
+  const targetDate = $('#plannerDate')?.value || todayKey();
+  copyPlansBetweenDates(shiftDateKey(targetDate, -1), targetDate, '전날 계획 복사');
+}
+
+function copySelectedPlansToTargetDate() {
+  const sourceDate = $('#plannerDate')?.value || todayKey();
+  const targetDate = $('#copyTargetDate')?.value || '';
+  copyPlansBetweenDates(sourceDate, targetDate, '선택 날짜 계획 복사');
+}
+
 function deletePlan(planId) {
   const plan = data.plans.find((item) => item.id === planId);
   if (!plan) return;
@@ -1018,6 +1133,8 @@ function deletePlan(planId) {
 }
 
 function renderReports() {
+  const monthInput = $('#reportMonth');
+  if (monthInput && !monthInput.value) monthInput.value = monthKey();
   const days = Number($('#reportRange').value || 7);
   const end = new Date();
   const dayKeys = Array.from({ length: days }, (_, idx) => {
@@ -1032,10 +1149,34 @@ function renderReports() {
     dailyMs.set(key, (dailyMs.get(key) || 0) + sessionDuration(session));
   });
   renderDailyChart(dayKeys, dailyMs);
+  renderMonthlyReport(monthInput?.value || monthKey());
   renderCategoryReport(sessions);
   renderPatternReport(sessions);
   renderStudyTypeReport(sessions);
   renderRoundReport(sessions);
+}
+
+function renderMonthlyReport(monthStr = monthKey()) {
+  const el = $('#monthlyReport');
+  if (!el) return;
+  const keys = monthDayKeys(monthStr);
+  const dailyTotals = keys.map((key) => actualMsForDate(key));
+  const totalMs = dailyTotals.reduce((sum, ms) => sum + ms, 0);
+  const studyDays = dailyTotals.filter((ms) => ms > 0).length;
+  const eightHourDays = dailyTotals.filter((ms) => ms >= 8 * 3600000).length;
+  const bestStreak = longestEightHourStreak(keys);
+  const referenceDate = monthStr === monthKey() ? todayKey() : keys[keys.length - 1];
+  const currentMonthStreak = eightHourStreakEndingAt(referenceDate, keys[0]);
+  const bestMs = Math.max(0, ...dailyTotals);
+  const avgMs = studyDays ? totalMs / studyDays : 0;
+  el.innerHTML = `
+    <div class="summary-tile highlight-tile"><span>8시간 이상 공부한 날</span><strong>${eightHourDays}일</strong><small>${escapeHtml(monthStr)} 기준</small></div>
+    <div class="summary-tile highlight-tile"><span>8시간 최장 연속</span><strong>${bestStreak}일</strong><small>선택 월 기준</small></div>
+    <div class="summary-tile"><span>현재/월말 연속</span><strong>${currentMonthStreak}일</strong><small>${monthStr === monthKey() ? '오늘까지' : '월말 기준'}</small></div>
+    <div class="summary-tile"><span>월 누적 집중</span><strong>${formatDuration(totalMs)}</strong><small>${studyDays}일 공부</small></div>
+    <div class="summary-tile"><span>공부한 날 평균</span><strong>${formatDuration(avgMs)}</strong><small>기록 있는 날 기준</small></div>
+    <div class="summary-tile"><span>최고 집중일</span><strong>${formatDuration(bestMs)}</strong><small>하루 최대</small></div>
+  `;
 }
 
 function renderDailyChart(dayKeys, dailyMs) {
@@ -1330,7 +1471,7 @@ async function forceAppUpdate() {
     console.warn('Force update failed', error);
   } finally {
     const url = new URL(window.location.href);
-    url.searchParams.set('v', '1.3.3');
+    url.searchParams.set('v', '1.3.5');
     url.searchParams.set('refresh', String(Date.now()));
     window.location.replace(url.toString());
   }
@@ -1742,6 +1883,14 @@ function deleteSessionRecord() {
   toast('세션 기록을 삭제했습니다.');
 }
 
+function moveDateInput(inputId, shiftDays = 0, useToday = false) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.value = useToday ? todayKey() : shiftDateKey(input.value || todayKey(), shiftDays);
+  if (inputId === 'timelineDate') renderTimeline();
+  if (inputId === 'plannerDate') renderPlanner();
+}
+
 function bindEvents() {
   document.addEventListener('click', (event) => {
     const nav = event.target.closest('[data-view]');
@@ -1767,6 +1916,12 @@ function bindEvents() {
 
     const deletePlanBtn = event.target.closest('[data-delete-plan]');
     if (deletePlanBtn) deletePlan(deletePlanBtn.dataset.deletePlan);
+
+    const dateNavBtn = event.target.closest('[data-date-nav]');
+    if (dateNavBtn) {
+      const shift = Number(dateNavBtn.dataset.dateShift || 0);
+      moveDateInput(dateNavBtn.dataset.dateNav, shift, dateNavBtn.dataset.dateToday === '1');
+    }
 
     const editMoodBtn = event.target.closest('[data-edit-mood]');
     if (editMoodBtn) {
@@ -1819,8 +1974,11 @@ function bindEvents() {
   $('#timelineDate').addEventListener('change', renderTimeline);
   $('#plannerDate')?.addEventListener('change', renderPlanner);
   $('#savePlannerGoalsBtn')?.addEventListener('click', savePlannerGoals);
+  $('#copyPrevPlansBtn')?.addEventListener('click', copyPreviousDayPlansToSelectedDate);
+  $('#copyPlansToDateBtn')?.addEventListener('click', copySelectedPlansToTargetDate);
   $('#addPlanBtn')?.addEventListener('click', addPlan);
   $('#reportRange').addEventListener('change', renderReports);
+  $('#reportMonth')?.addEventListener('change', renderReports);
   $('#saveSettingsBtn').addEventListener('click', saveSettings);
   $('#forceUpdateBtn')?.addEventListener('click', forceAppUpdate);
   $('#addCategoryBtn').addEventListener('click', addCategory);
