@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.1",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-09T14:10:38.426Z",
+  "backupAt": "2026-07-10T02:30:45.301Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.1",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-09T14:02:18.446Z",
+        "lastBackupAt": "2026-07-09T14:10:39.834Z",
         "lastRestoreAt": "2026-07-09T02:03:19.839Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -298,6 +298,40 @@
         "mood": "neutral",
         "note": "문제풀이 완료 손해사정이론 완료\n\n이해 부분은 85%이상 되지만 몇몇 이론 산식 규정 세부적으로 암기하고 적용가능하게 만들어야 함",
         "status": "completed"
+      },
+      {
+        "id": "s_1783642428132",
+        "linkedPlanId": "p_1783606213364",
+        "title": "이론",
+        "categoryId": "law_insurance",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "15강 이상",
+        "targetMinutes": 600,
+        "startAt": "2026-07-10T00:13:48.132Z",
+        "endAt": "2026-07-10T02:30:44.336Z",
+        "pauses": [
+          {
+            "start": "2026-07-10T00:20:50.450Z",
+            "end": "2026-07-10T00:26:39.889Z"
+          },
+          {
+            "start": "2026-07-10T00:58:52.097Z",
+            "end": "2026-07-10T01:08:48.038Z"
+          },
+          {
+            "start": "2026-07-10T01:56:44.284Z",
+            "end": "2026-07-10T02:00:39.806Z"
+          },
+          {
+            "start": "2026-07-10T02:29:46.130Z",
+            "end": "2026-07-10T02:30:44.336Z"
+          }
+        ],
+        "isPaused": false,
+        "mood": "neutral",
+        "note": "6강 까지 완료 무조건 암기 과목이다 줄친거 동그라미 친거 별표친거 기출문제 위주로 회독 할 것",
+        "status": "completed"
       }
     ],
     "plans": [
@@ -328,13 +362,13 @@
         "startTime": "09:00",
         "endTime": "23:00",
         "targetMinutes": 600,
-        "status": "planned",
-        "linkedSessionId": null,
+        "status": "completed",
+        "linkedSessionId": "s_1783642428132",
         "createdAt": "2026-07-09T14:10:13.364Z",
-        "completedAt": null
+        "completedAt": "2026-07-10T02:30:44.336Z"
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-09T14:10:13.365Z"
+    "updatedAt": "2026-07-10T02:30:44.336Z"
   }
 }
