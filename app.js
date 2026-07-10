@@ -5,7 +5,7 @@ const IDB_NAME = 'focus_manager_persistence';
 const IDB_STORE = 'snapshots';
 const IDB_DATA_KEY = 'latest';
 const DEFAULT_DATA = {
-  version: '1.3.5',
+  version: '1.3.6',
   settings: {
     dailyTargetHours: 6,
     weeklyTargetHours: 40,
@@ -349,6 +349,12 @@ function monthKey(date = new Date()) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   return `${y}-${m}`;
+}
+
+function normalizeMonthKey(value) {
+  const raw = String(value || '').trim();
+  if (/^\d{4}-\d{2}$/.test(raw)) return raw;
+  return monthKey();
 }
 
 function dateFromKey(dateStr) {
@@ -1134,7 +1140,7 @@ function deletePlan(planId) {
 
 function renderReports() {
   const monthInput = $('#reportMonth');
-  if (monthInput && !monthInput.value) monthInput.value = monthKey();
+  if (monthInput) monthInput.value = normalizeMonthKey(monthInput.value);
   const days = Number($('#reportRange').value || 7);
   const end = new Date();
   const dayKeys = Array.from({ length: days }, (_, idx) => {
@@ -1149,7 +1155,7 @@ function renderReports() {
     dailyMs.set(key, (dailyMs.get(key) || 0) + sessionDuration(session));
   });
   renderDailyChart(dayKeys, dailyMs);
-  renderMonthlyReport(monthInput?.value || monthKey());
+  renderMonthlyReport(normalizeMonthKey(monthInput?.value));
   renderCategoryReport(sessions);
   renderPatternReport(sessions);
   renderStudyTypeReport(sessions);
@@ -1159,6 +1165,9 @@ function renderReports() {
 function renderMonthlyReport(monthStr = monthKey()) {
   const el = $('#monthlyReport');
   if (!el) return;
+  monthStr = normalizeMonthKey(monthStr);
+  el.hidden = false;
+  el.removeAttribute('hidden');
   const keys = monthDayKeys(monthStr);
   const dailyTotals = keys.map((key) => actualMsForDate(key));
   const totalMs = dailyTotals.reduce((sum, ms) => sum + ms, 0);
@@ -1169,7 +1178,10 @@ function renderMonthlyReport(monthStr = monthKey()) {
   const currentMonthStreak = eightHourStreakEndingAt(referenceDate, keys[0]);
   const bestMs = Math.max(0, ...dailyTotals);
   const avgMs = studyDays ? totalMs / studyDays : 0;
+  const emptyNotice = totalMs > 0 ? '' : '<div class="summary-tile empty-month-tile"><span>월별 기록</span><strong>기록 없음</strong><small>선택한 월에 저장된 완료 세션이 없습니다.</small></div>';
+  el.classList.toggle('is-empty', totalMs <= 0);
   el.innerHTML = `
+    ${emptyNotice}
     <div class="summary-tile highlight-tile"><span>8시간 이상 공부한 날</span><strong>${eightHourDays}일</strong><small>${escapeHtml(monthStr)} 기준</small></div>
     <div class="summary-tile highlight-tile"><span>8시간 최장 연속</span><strong>${bestStreak}일</strong><small>선택 월 기준</small></div>
     <div class="summary-tile"><span>현재/월말 연속</span><strong>${currentMonthStreak}일</strong><small>${monthStr === monthKey() ? '오늘까지' : '월말 기준'}</small></div>

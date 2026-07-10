@@ -672,15 +672,42 @@ h3 { margin-bottom: 14px; font-family: var(--font-display); font-size: 19px; fon
 .report-fold { min-height: 100%; }
 .report-fold .bar-chart { min-height: 220px; }
 
+
+/* v1.3.6 Date Nav Clean Row & Monthly Empty State */
+.clean-date-nav {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr);
+  gap: 8px;
+  width: min(100%, 360px);
+}
+.date-jump-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.date-jump-row .compact-button {
+  width: 100%;
+  white-space: nowrap;
+}
+.empty-month-tile {
+  border-style: dashed;
+  background: rgba(255,255,255,.025);
+}
+.compact-summary.is-empty {
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+}
+
 @media (max-width: 1060px) {
   .date-nav, .report-controls { justify-content: flex-start; width: 100%; }
   .compact-summary { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); }
 }
 
 @media (max-width: 640px) {
-  .date-nav { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
-  .date-nav .date-input { grid-column: 1 / -1; width: 100%; order: -1; }
-  .date-nav .compact-button { width: 100%; padding-left: 8px; padding-right: 8px; }
+  .date-nav { width: 100%; }
+  .clean-date-nav { width: 100%; }
+  .date-jump-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .date-jump-row .compact-button { width: 100%; padding-left: 6px; padding-right: 6px; font-size: 11px; }
   .copy-target-row { grid-template-columns: 1fr; }
   .report-controls { display: grid; grid-template-columns: 1fr; }
   .month-input { width: 100%; }

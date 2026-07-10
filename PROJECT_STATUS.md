@@ -2,26 +2,26 @@
 
 ## Current Version
 
-- Current version: v1.3.5 Routine Copy & 8h Streak
-- Previous baseline: v1.3.4 Navigation, Monthly Report & Fold
+- Current version: v1.3.6 Date Nav & Monthly Report Fix
+- Previous baseline: v1.3.5 Routine Copy & 8h Streak
 - Storage key: `focus_manager_v1`
-- Service worker cache: `focusmanager-v1-3-5`
+- Service worker cache: `focusmanager-v1-3-6`
 
 ## Current Stable Candidate
 
-`FocusManager_PWA_v1_3_5_routine_copy_8h_streak.zip`
+`FocusManager_PWA_v1_3_6_date_nav_monthly_fix.zip`
 
-## v1.3.5 Summary
+## v1.3.6 Summary
 
-이번 버전은 공부 플래너의 반복 입력 부담을 줄이고, 월별 리포트에서 8시간 이상 공부한 날의 연속성을 확인할 수 있게 만든 소규모 기능 강화 버전입니다.
+이번 버전은 모바일에서 날짜 이동 버튼을 더 깔끔하게 정리하고, 월별 리포트가 데이터가 없는 달에도 비어 보이지 않도록 보강한 소규모 안정화 버전입니다.
 
-## Added
+## Fixed
 
-- 전날 계획을 선택 날짜로 복사
-- 선택 날짜 계획을 사용자가 고른 대상 날짜로 복사
-- 복사된 계획은 새 대기 계획으로 생성
-- 8시간 이상 공부한 날의 월별 최장 연속 기록
-- 8시간 이상 공부한 날의 현재/월말 기준 연속 기록
+- 타임라인 날짜 이동 버튼을 `전날 / 오늘 / 다음날` 한 줄로 정리
+- 플래너 날짜 이동 버튼을 `전날 / 오늘 / 다음날` 한 줄로 정리
+- 모바일 날짜 이동 버튼 레이아웃 개선
+- 월별 리포트 빈 데이터 표시 보강
+- 월 선택값 안전 보정
 
 ## Verification
 
