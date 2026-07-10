@@ -1,12 +1,12 @@
 {
   "app": "FocusManager",
   "backupVersion": "1.0",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-10T02:51:28.599Z",
+  "backupAt": "2026-07-10T03:18:28.405Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
-    "version": "1.3.1",
+    "version": "1.3.2",
     "settings": {
       "dailyTargetHours": 10,
       "weeklyTargetHours": 40,
@@ -25,8 +25,8 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-10T02:47:30.856Z",
-        "lastRestoreAt": "2026-07-09T02:03:19.839Z",
+        "lastBackupAt": null,
+        "lastRestoreAt": "2026-07-10T02:53:00.485Z",
         "lastStatus": "GitHub 백업 중..."
       }
     },
@@ -335,6 +335,7 @@
       },
       {
         "id": "s_1783651607837",
+        "linkedPlanId": null,
         "title": "이론",
         "categoryId": "law_insurance",
         "sessionType": "theory",
@@ -356,6 +357,7 @@
       },
       {
         "id": "s_1783651869191",
+        "linkedPlanId": null,
         "title": "이론",
         "categoryId": "law_insurance",
         "sessionType": "theory",
@@ -370,6 +372,22 @@
             "end": "2026-07-10T02:51:26.054Z"
           }
         ],
+        "isPaused": false,
+        "mood": "focused",
+        "note": "",
+        "status": "completed"
+      },
+      {
+        "id": "s_1783652010491",
+        "title": "이론",
+        "categoryId": "law_insurance",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "7강 문제풀이",
+        "targetMinutes": 50,
+        "startAt": "2026-07-10T02:53:30.491Z",
+        "endAt": "2026-07-10T03:18:27.257Z",
+        "pauses": [],
         "isPaused": false,
         "mood": "focused",
         "note": "",
@@ -411,6 +429,6 @@
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-10T02:51:26.054Z"
+    "updatedAt": "2026-07-10T03:18:27.257Z"
   }
 }
