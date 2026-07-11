@@ -1,27 +1,24 @@
 # CHANGELOG
 
-## v1.3.6
+## v1.3.7
 
 ### Fixed
 
-- 모바일에서 타임라인 날짜 이동 버튼이 `전날 / 다음날`과 `오늘`으로 분리되어 보이던 레이아웃 수정
-- 플래너 날짜 이동 버튼도 `전날 / 오늘 / 다음날` 순서의 한 줄 버튼으로 정리
-- 월별 리포트가 데이터가 없는 달에 비어 보일 수 있는 문제 보강
-- 월별 리포트가 기록 없는 달에도 `기록 없음`, 0일, 0h 값을 표시하도록 수정
-- 월 선택값이 비어 있거나 비정상일 때 현재 월로 보정
+- 모바일 Safari/iOS PWA에서 타임라인/플래너 날짜 선택 박스가 카드 밖으로 밀려 보이는 문제 수정
+- `input[type=date]` 네이티브 컨트롤의 기본 폭/정렬 영향으로 생기는 날짜 박스 깨짐 방지
+- 날짜 입력 박스에 `max-width: 100%`, `min-width: 0`, `appearance: none`, 중앙 정렬 스타일 보강
 
 ### Kept
 
-- v1.3.5 계획 복사 기능 유지
-- v1.3.5 8시간 연속 기록 유지
-- v1.3.4 접기/펼치기 UI 유지
-- v1.3.3 앱 강제 업데이트 버튼 유지
-- v1.3.2 상단 경과시간 표시 유지
-- v1.3.1 저장 안정화 유지
-- GitHub 백업/복원 유지
-- 저장 키 `focus_manager_v1` 유지
+- v1.3.6 날짜 이동 버튼 정렬 유지
+- 월별 리포트 빈 데이터 표시 유지
+- v1.3.5 계획 복사 및 8시간 연속 기록 유지
+- GitHub 백업 유지
+- 앱 강제 업데이트 유지
+- 저장 안정화 유지
 
-### Changed
+### Technical
 
-- service worker cache version: `focusmanager-v1-3-6`
-- app data version: `1.3.6`
+- app data version: `1.3.7`
+- service worker cache version: `focusmanager-v1-3-7`
+- localStorage key unchanged: `focus_manager_v1`
