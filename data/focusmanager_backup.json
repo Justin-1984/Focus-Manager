@@ -1,12 +1,12 @@
 {
   "app": "FocusManager",
   "backupVersion": "1.0",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-10T15:23:55.157Z",
-  "source": "https://justin-1984.github.io/Focus-Manager/index.html?v=1.3.3&refresh=1783684986062",
+  "backupAt": "2026-07-11T03:05:41.599Z",
+  "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
-    "version": "1.3.6",
+    "version": "1.3.7",
     "settings": {
       "dailyTargetHours": 10,
       "weeklyTargetHours": 40,
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-10T11:58:45.734Z",
+        "lastBackupAt": "2026-07-10T15:23:56.377Z",
         "lastRestoreAt": "2026-07-10T10:34:22.884Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -538,6 +538,7 @@
       },
       {
         "id": "s_1783685114467",
+        "linkedPlanId": null,
         "title": "이론",
         "categoryId": "law_insurance",
         "sessionType": "theory",
@@ -553,7 +554,33 @@
           }
         ],
         "isPaused": false,
-        "mood": "focused",
+        "mood": "neutral",
+        "note": "",
+        "status": "completed"
+      },
+      {
+        "id": "s_1783732842377",
+        "linkedPlanId": null,
+        "title": "보험업법 마무리",
+        "categoryId": "law_insurance",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "보험업법 끝내고 의학이론 2-4강 정도",
+        "targetMinutes": 90,
+        "startAt": "2026-07-11T01:20:42.377Z",
+        "endAt": "2026-07-11T03:05:39.309Z",
+        "pauses": [
+          {
+            "start": "2026-07-11T01:59:02.660Z",
+            "end": "2026-07-11T02:06:16.348Z"
+          },
+          {
+            "start": "2026-07-11T02:45:17.980Z",
+            "end": "2026-07-11T02:52:00.526Z"
+          }
+        ],
+        "isPaused": false,
+        "mood": "neutral",
         "note": "",
         "status": "completed",
         "targetNotified": true
@@ -591,9 +618,25 @@
         "linkedSessionId": "s_1783642428132",
         "createdAt": "2026-07-09T14:10:13.364Z",
         "completedAt": "2026-07-10T02:30:44.336Z"
+      },
+      {
+        "id": "p_1783697209518",
+        "date": "2026-07-11",
+        "title": "보험업법 마무리",
+        "categoryId": "law_insurance",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "보험업법 끝내고 의학이론 2-4강 정도",
+        "startTime": "09:00",
+        "endTime": "22:00",
+        "targetMinutes": 600,
+        "status": "planned",
+        "linkedSessionId": null,
+        "createdAt": "2026-07-10T15:26:49.518Z",
+        "completedAt": null
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-10T15:23:54.039Z"
+    "updatedAt": "2026-07-11T03:05:39.309Z"
   }
 }
