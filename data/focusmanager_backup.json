@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.7",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-11T03:05:41.599Z",
+  "backupAt": "2026-07-11T03:47:47.564Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.7",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-10T15:23:56.377Z",
+        "lastBackupAt": "2026-07-11T03:05:43.278Z",
         "lastRestoreAt": "2026-07-10T10:34:22.884Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -584,6 +584,23 @@
         "note": "",
         "status": "completed",
         "targetNotified": true
+      },
+      {
+        "id": "s_1783739953094",
+        "linkedPlanId": "p_1783697209518",
+        "title": "보험업법 마무리",
+        "categoryId": "law_insurance",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "보험업법 끝내고 의학이론 2-4강 정도",
+        "targetMinutes": 600,
+        "startAt": "2026-07-11T03:19:13.094Z",
+        "endAt": "2026-07-11T03:47:44.434Z",
+        "pauses": [],
+        "isPaused": false,
+        "mood": "neutral",
+        "note": "",
+        "status": "completed"
       }
     ],
     "plans": [
@@ -630,13 +647,13 @@
         "startTime": "09:00",
         "endTime": "22:00",
         "targetMinutes": 600,
-        "status": "planned",
-        "linkedSessionId": null,
+        "status": "completed",
+        "linkedSessionId": "s_1783739953094",
         "createdAt": "2026-07-10T15:26:49.518Z",
-        "completedAt": null
+        "completedAt": "2026-07-11T03:47:44.434Z"
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-11T03:05:39.309Z"
+    "updatedAt": "2026-07-11T03:47:44.436Z"
   }
 }
