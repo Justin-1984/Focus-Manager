@@ -755,3 +755,82 @@ h3 { margin-bottom: 14px; font-family: var(--font-display); font-size: 19px; fon
     font-size: 15px;
   }
 }
+
+
+/* v1.3.8 Planner Layout Rebuild */
+.planner-grid {
+  grid-template-columns: minmax(0, 0.92fr) minmax(360px, 1.08fr);
+  grid-template-areas:
+    "hero hero"
+    "copy goals"
+    "add goals"
+    "list list";
+  align-items: start;
+}
+.planner-hero-card { grid-area: hero; }
+.planner-copy-card { grid-area: copy; }
+.planner-goals-card { grid-area: goals; align-self: start; }
+.planner-add-card { grid-area: add; align-self: start; }
+.planner-list-card { grid-area: list; }
+.planner-hero-head {
+  align-items: flex-start;
+  gap: 20px;
+}
+.planner-hero-copy {
+  flex: 1 1 520px;
+  min-width: 0;
+}
+.planner-hero-head .clean-date-nav {
+  flex: 0 1 360px;
+  width: min(100%, 360px);
+  margin-left: auto;
+}
+.planner-copy-card,
+.planner-goals-card,
+.planner-add-card,
+.planner-list-card { min-width: 0; }
+.copy-target-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+.copy-target-row .field-label { grid-column: auto; margin-bottom: 0; }
+.copy-target-row .primary-button { width: 100%; }
+.goal-input-grid .field-label,
+.plan-time-grid .field-label { min-width: 0; }
+.goal-input-grid .text-input,
+.plan-time-grid .text-input { width: 100%; min-width: 0; }
+
+@media (max-width: 1180px) {
+  .planner-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "hero"
+      "copy"
+      "goals"
+      "add"
+      "list";
+  }
+  .planner-hero-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  }
+}
+
+@media (max-width: 760px) {
+  .planner-hero-head {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .planner-hero-head .clean-date-nav {
+    width: 100%;
+    margin-left: 0;
+  }
+  .planner-summary { grid-template-columns: 1fr; }
+  .goal-input-grid { grid-template-columns: 1fr; }
+  .plan-time-grid { grid-template-columns: 1fr; }
+  .planner-copy-card .panel-head,
+  .planner-list-card .panel-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}

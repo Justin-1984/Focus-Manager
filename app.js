@@ -5,7 +5,7 @@ const IDB_NAME = 'focus_manager_persistence';
 const IDB_STORE = 'snapshots';
 const IDB_DATA_KEY = 'latest';
 const DEFAULT_DATA = {
-  version: '1.3.7',
+  version: '1.3.8',
   settings: {
     dailyTargetHours: 6,
     weeklyTargetHours: 40,

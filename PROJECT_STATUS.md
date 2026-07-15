@@ -1,26 +1,10 @@
-# PROJECT_STATUS
+# PROJECT STATUS
 
-## Current Status
-
-- Project: FocusManager PWA
-- Current version: v1.3.7 Date Input Layout Hotfix
-- Previous baseline: v1.3.6 Date Nav & Monthly Report Fix
-- Stable candidate: Yes
-- Service worker cache: `focusmanager-v1-3-7`
+- Current version: v1.3.8 Planner Layout Rebuild
+- Stable baseline: v1.3.7 Date Input Layout Hotfix
 - Storage key: `focus_manager_v1`
+- Service worker cache: `focusmanager-v1-3-8`
 
-## Current ZIP
+## v1.3.8 Summary
 
-`FocusManager_PWA_v1_3_7_date_input_layout_hotfix.zip`
-
-## v1.3.7 Summary
-
-This version fixes a mobile layout issue where the native iOS/Safari date picker field could overflow or visually break inside timeline/planner cards. The fix keeps the one-line `전날 / 오늘 / 다음날` navigation from v1.3.6 while constraining the date input to the card width.
-
-## Safety Notes
-
-- No data schema change
-- No storage key change
-- No GitHub backup behavior change
-- No planner data migration required
-- Existing sessions/plans remain compatible
+플래너 화면에서 목표 설정 카드의 높이와 CSS Grid 행 계산 때문에 PC·태블릿·모바일 카드가 불규칙하게 밀리던 문제를 구조적으로 수정했습니다. 데스크톱에서는 좌우 열을 독립적으로 구성하고, 태블릿과 모바일에서는 계획 복사 → 목표 설정 → 계획 추가 → 선택 날짜 계획 순서의 단일 열로 고정합니다.

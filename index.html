@@ -23,7 +23,7 @@
         <div class="brand-mark">F</div>
         <div>
           <strong>FocusManager</strong>
-          <span>v1.3.7 · 날짜 입력 레이아웃 핫픽스</span>
+          <span>v1.3.8 · 플래너 레이아웃 재정렬</span>
         </div>
       </div>
       <nav class="nav-list">
@@ -222,9 +222,9 @@
 
       <section id="plannerView" class="view">
         <div class="planner-grid">
-          <section class="panel-card wide-report">
-            <div class="panel-head wrap-head">
-              <div>
+          <section class="panel-card wide-report planner-hero-card">
+            <div class="panel-head wrap-head planner-hero-head">
+              <div class="planner-hero-copy">
                 <p class="eyebrow">Study Planner</p>
                 <h2>목표와 공부 계획</h2>
                 <p class="muted">앱 내부 플래너입니다. Apple Calendar 연동 없이 날짜별 계획과 실제 집중 기록을 비교합니다.</p>
@@ -257,7 +257,7 @@
             <p class="muted mini-help">선택한 날짜의 계획을 다른 날짜로 복사합니다. 완료 기록은 복사하지 않고 대기 계획으로만 추가합니다.</p>
           </section>
 
-          <section class="panel-card">
+          <section class="panel-card planner-goals-card">
             <h3>목표 설정</h3>
             <div class="goal-input-grid">
               <label class="field-label" for="dailyGoalInput">오늘 총 공부 목표<input id="dailyGoalInput" class="text-input" type="number" min="0.5" max="16" step="0.5" /></label>
@@ -268,7 +268,7 @@
             <button class="primary-button" id="savePlannerGoalsBtn">목표 저장</button>
           </section>
 
-          <section class="panel-card">
+          <section class="panel-card planner-add-card">
             <h3>계획 추가</h3>
             <label class="field-label" for="planIntention">의도 / 할 일</label>
             <input id="planIntention" class="text-input" placeholder="예: 의학이론 뼈/신경 2강 복습" autocomplete="off" />
@@ -310,7 +310,7 @@
             <button class="primary-button" id="addPlanBtn">계획 추가</button>
           </section>
 
-          <section class="panel-card wide-report">
+          <section class="panel-card wide-report planner-list-card">
             <div class="panel-head">
               <h3>선택 날짜 계획</h3>
               <button class="link-button" data-jump="session">직접 세션 시작</button>
