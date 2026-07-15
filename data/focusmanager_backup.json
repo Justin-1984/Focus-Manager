@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.7",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-15T06:57:28.139Z",
+  "backupAt": "2026-07-15T07:46:04.957Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html",
   "data": {
     "version": "1.3.7",
@@ -25,7 +25,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-15T06:44:32.045Z",
+        "lastBackupAt": "2026-07-15T06:57:29.208Z",
         "lastRestoreAt": "2026-07-14T12:46:54.257Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -759,6 +759,22 @@
         "mood": "focused",
         "note": "",
         "status": "completed"
+      },
+      {
+        "id": "s_1784098674905",
+        "title": "의학이론 문제풀이",
+        "categoryId": "medical",
+        "sessionType": "theory",
+        "round": "none",
+        "part": "문제풀이",
+        "targetMinutes": 0,
+        "startAt": "2026-07-15T06:57:54.905Z",
+        "endAt": "2026-07-15T07:46:04.157Z",
+        "pauses": [],
+        "isPaused": false,
+        "mood": "focused",
+        "note": "",
+        "status": "completed"
       }
     ],
     "plans": [
@@ -812,6 +828,6 @@
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-15T06:57:27.438Z"
+    "updatedAt": "2026-07-15T07:46:04.157Z"
   }
 }
