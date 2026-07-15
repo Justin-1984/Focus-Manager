@@ -3,7 +3,7 @@
   "backupVersion": "1.0",
   "version": "1.3.8",
   "storageKey": "focus_manager_v1",
-  "backupAt": "2026-07-15T08:23:29.878Z",
+  "backupAt": "2026-07-15T13:58:43.654Z",
   "source": "https://justin-1984.github.io/Focus-Manager/index.html?v=1.3.5&refresh=1784101646543",
   "data": {
     "version": "1.3.8",
@@ -11,8 +11,14 @@
       "dailyTargetHours": 10,
       "weeklyTargetHours": 40,
       "categoryGoals": {
-        "daily": {},
-        "weekly": {}
+        "daily": {
+          "medical": 10,
+          "liability": 10
+        },
+        "weekly": {
+          "medical": 30,
+          "liability": 30
+        }
       },
       "sound": true,
       "autoReflection": true,
@@ -25,7 +31,7 @@
         "path": "data/focusmanager_backup.json",
         "token": "",
         "autoOnSessionEnd": true,
-        "lastBackupAt": "2026-07-15T07:46:06.046Z",
+        "lastBackupAt": "2026-07-15T08:23:30.769Z",
         "lastRestoreAt": "2026-07-15T07:50:28.768Z",
         "lastStatus": "GitHub 백업 중..."
       }
@@ -793,6 +799,22 @@
         "mood": "focused",
         "note": "",
         "status": "completed"
+      },
+      {
+        "id": "s_1784111396365",
+        "title": "문제풀이",
+        "categoryId": "medical",
+        "sessionType": "past",
+        "round": "none",
+        "part": "",
+        "targetMinutes": 0,
+        "startAt": "2026-07-15T10:29:56.365Z",
+        "endAt": "2026-07-15T13:58:42.992Z",
+        "pauses": [],
+        "isPaused": false,
+        "mood": "focused",
+        "note": "문제풀이 완료 못함 이론 숙지가 매우 부족하지만 그래도 희망은 보인다. 다시 회독할때는 의의를 먼저 확인하는데 시간 투자를 하자.",
+        "status": "completed"
       }
     ],
     "plans": [
@@ -846,6 +868,6 @@
       }
     ],
     "activeSession": null,
-    "updatedAt": "2026-07-15T08:23:28.147Z"
+    "updatedAt": "2026-07-15T13:58:42.992Z"
   }
 }
